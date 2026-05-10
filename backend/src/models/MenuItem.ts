@@ -1,5 +1,5 @@
 import { MenuStatus } from './enums.js';
-import type Category from './Category.js';
+import Category from './Category.js';
 
 export class MenuItem {
 
