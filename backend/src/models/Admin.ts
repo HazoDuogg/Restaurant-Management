@@ -1,7 +1,7 @@
-import Person from './Person.js';
+import Accout from './Account.js';
 import Role from './Role.js';
 
-export default class Admin extends Person {
+export default class Admin extends Accout {
 
     constructor(
         id: number,

@@ -1,7 +1,7 @@
-import Person from './Person.js';
+import Account from './Account.js';
 import Role from './Role.js';
 
-export default class Staff extends Person {
+export default class Staff extends Account {
 
     private _staffId: string;
     private _position: string;

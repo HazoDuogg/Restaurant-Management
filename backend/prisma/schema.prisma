@@ -7,9 +7,15 @@ datasource db {
   provider = "mysql"
 }
 
+model role {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique @db.VarChar(50)
+  accounts account[]
+}
+
 model account {
   id         Int       @id @default(autoincrement())
-  username   String    @unique(map: "username") @db.VarChar(100)
+  username   String    @unique @db.VarChar(100)
   password   String    @db.VarChar(255)
   name       String    @db.VarChar(150)
   phone      String?   @db.VarChar(20)
@@ -19,49 +25,45 @@ model account {
   created_at DateTime? @default(now()) @db.DateTime(0)
   updated_at DateTime? @default(now()) @db.DateTime(0)
 
-  @@index([role_id], map: "role_id")
-}
-
-model admin {
-  account_id Int @id
-}
-
-model category {
-  id          Int       @id @default(autoincrement())
-  name        String    @db.VarChar(100)
-  description String?   @db.Text
-  created_at  DateTime? @default(now()) @db.DateTime(0)
-  updated_at  DateTime? @default(now()) @db.DateTime(0)
+  role       role?     @relation(fields: [role_id], references: [id])
+  customer   customer?
+  staff      staff?
+  admin      admin?
 }
 
 model customer {
   account_id    Int     @id
-  customer_code String? @unique(map: "customer_code") @db.VarChar(50)
+  customer_code String? @unique @db.VarChar(50)
+
+  account      account       @relation(fields: [account_id], references: [id])
+  reservations reservation[]
+  orders       orders[]
 }
 
-model invoice {
-  id           Int       @id @default(autoincrement())
-  invoice_code String?   @unique(map: "invoice_code") @db.VarChar(50)
-  created_time DateTime? @default(now()) @db.DateTime(0)
-  total_amount Decimal?  @db.Decimal(12, 2)
-  tax          Decimal?  @default(0.00) @db.Decimal(12, 2)
-  discount     Decimal?  @default(0.00) @db.Decimal(12, 2)
-  final_amount Decimal   @db.Decimal(12, 2)
-  status       String?   @default("UNPAID") @db.VarChar(50)
-  order_id     Int?      @unique(map: "order_id")
-  updated_at   DateTime? @default(now()) @db.DateTime(0)
+model staff {
+  account_id Int       @id
+  staff_code String?   @db.VarChar(50)
+  position   String?   @db.VarChar(100)
+  start_date DateTime? @db.Date
+
+  account account  @relation(fields: [account_id], references: [id])
+  orders  orders[]
 }
 
-model invoice_detail {
-  id           Int      @id @default(autoincrement())
-  quantity     Int?
-  unit_price   Decimal? @db.Decimal(12, 2)
-  total_price  Decimal? @db.Decimal(12, 2)
-  invoice_id   Int?
-  menu_item_id Int?
+model admin {
+  account_id Int @id
 
-  @@index([invoice_id], map: "invoice_id")
-  @@index([menu_item_id], map: "menu_item_id")
+  account account @relation(fields: [account_id], references: [id])
+}
+
+model category {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(100)
+  description String?    @db.Text
+  created_at  DateTime?  @default(now()) @db.DateTime(0)
+  updated_at  DateTime?  @default(now()) @db.DateTime(0)
+
+  menu_items  menu_item[]
 }
 
 model menu_item {
@@ -74,19 +76,31 @@ model menu_item {
   created_at  DateTime? @default(now()) @db.DateTime(0)
   updated_at  DateTime? @default(now()) @db.DateTime(0)
 
-  @@index([category_id], map: "category_id")
+  category        category?        @relation(fields: [category_id], references: [id])
+  order_items     order_item[]
+  invoice_details invoice_detail[]
 }
 
-model order_item {
-  id           Int      @id @default(autoincrement())
-  quantity     Int
-  unit_price   Decimal? @db.Decimal(12, 2)
-  total_price  Decimal? @db.Decimal(12, 2)
-  order_id     Int?
-  menu_item_id Int?
+model restaurant_table {
+  id           Int     @id @default(autoincrement())
+  table_number Int     @unique
+  capacity     Int?
+  status       String? @default("AVAILABLE") @db.VarChar(50)
 
-  @@index([menu_item_id], map: "menu_item_id")
-  @@index([order_id], map: "order_id")
+  reservations reservation[]
+  orders       orders[]
+}
+
+model reservation {
+  id               Int      @id @default(autoincrement())
+  reservation_time DateTime @db.DateTime(0)
+  number_people    Int?
+  status           String?  @default("PENDING") @db.VarChar(50)
+  customer_id      Int?
+  table_id         Int?
+
+  customer customer?         @relation(fields: [customer_id], references: [account_id])
+  table    restaurant_table? @relation(fields: [table_id], references: [id])
 }
 
 model orders {
@@ -100,9 +114,52 @@ model orders {
   created_at   DateTime? @default(now()) @db.DateTime(0)
   updated_at   DateTime? @default(now()) @db.DateTime(0)
 
-  @@index([customer_id], map: "customer_id")
-  @@index([staff_id], map: "staff_id")
-  @@index([table_id], map: "table_id")
+  customer   customer?         @relation(fields: [customer_id], references: [account_id])
+  staff      staff?            @relation(fields: [staff_id], references: [account_id])
+  table      restaurant_table? @relation(fields: [table_id], references: [id])
+  order_items order_item[]
+  invoice    invoice?
+}
+
+model order_item {
+  id           Int      @id @default(autoincrement())
+  quantity     Int
+  unit_price   Decimal? @db.Decimal(12, 2)
+  total_price  Decimal? @db.Decimal(12, 2)
+  order_id     Int?
+  menu_item_id Int?
+
+  order     orders?    @relation(fields: [order_id], references: [id])
+  menu_item menu_item? @relation(fields: [menu_item_id], references: [id])
+}
+
+model invoice {
+  id           Int       @id @default(autoincrement())
+  invoice_code String?   @unique @db.VarChar(50)
+  created_time DateTime? @default(now()) @db.DateTime(0)
+  total_amount Decimal?  @db.Decimal(12, 2)
+  tax          Decimal?  @default(0.00) @db.Decimal(12, 2)
+  discount     Decimal?  @default(0.00) @db.Decimal(12, 2)
+  final_amount Decimal   @db.Decimal(12, 2)
+  status       String?   @default("UNPAID") @db.VarChar(50)
+  order_id     Int?      @unique
+  updated_at   DateTime? @default(now()) @db.DateTime(0)
+
+  order           orders?          @relation(fields: [order_id], references: [id])
+  payment         payment?
+  invoice_details invoice_detail[]
+}
+
+model invoice_detail {
+  id           Int      @id @default(autoincrement())
+  quantity     Int?
+  unit_price   Decimal? @db.Decimal(12, 2)
+  total_price  Decimal? @db.Decimal(12, 2)
+  invoice_id   Int?
+  menu_item_id Int?
+
+  invoice   invoice?   @relation(fields: [invoice_id], references: [id])
+  menu_item menu_item? @relation(fields: [menu_item_id], references: [id])
 }
 
 model payment {
@@ -111,7 +168,9 @@ model payment {
   payment_method String?   @db.VarChar(50)
   status         String?   @default("PENDING") @db.VarChar(50)
   payment_time   DateTime? @default(now()) @db.DateTime(0)
-  invoice_id     Int?      @unique(map: "invoice_id")
+  invoice_id     Int?      @unique
+
+  invoice invoice? @relation(fields: [invoice_id], references: [id])
 }
 
 model report {
@@ -120,35 +179,4 @@ model report {
   to_date       DateTime  @db.Date
   total_revenue Decimal?  @db.Decimal(15, 2)
   created_at    DateTime? @default(now()) @db.DateTime(0)
-}
-
-model reservation {
-  id               Int      @id @default(autoincrement())
-  reservation_time DateTime @db.DateTime(0)
-  number_people    Int?
-  status           String?  @default("PENDING") @db.VarChar(50)
-  customer_id      Int?
-  table_id         Int?
-
-  @@index([customer_id], map: "customer_id")
-  @@index([table_id], map: "table_id")
-}
-
-model restaurant_table {
-  id           Int     @id @default(autoincrement())
-  table_number Int     @unique(map: "table_number")
-  capacity     Int?
-  status       String? @default("AVAILABLE") @db.VarChar(50)
-}
-
-model staff {
-  account_id Int       @id
-  staff_code String?   @db.VarChar(50)
-  position   String?   @db.VarChar(100)
-  start_date DateTime? @db.Date
-}
-
-model role {
-  id   Int    @id @default(autoincrement())
-  name String @unique(map: "name") @db.VarChar(50)
 }

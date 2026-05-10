@@ -1,6 +1,6 @@
 import Role from './Role.js';
 
-export default abstract class Person {
+export default abstract class Accout {
 
     protected _id: number;
     protected _name: string;
