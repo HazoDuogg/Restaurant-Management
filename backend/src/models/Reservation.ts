@@ -1,3 +1,4 @@
+import type Customer from './Customer.js';
 import { ReservationStatus } from './enums.js';
 import Table from './Table.js';
 
@@ -8,19 +9,22 @@ export default class Reservation {
     private _numberOfPeople: number;
     private _status: ReservationStatus;
     private _table: Table | null;
+    private _customer: Customer | null
 
     constructor(
         id: number,
         reservationTime: Date,
         numberOfPeople: number,
         status: ReservationStatus = ReservationStatus.PENDING,
-        table: Table | null = null
+        table: Table | null = null,
+        customer: Customer | null = null
     ) {
         this._id = id;
         this._reservationTime = reservationTime;
         this._numberOfPeople = numberOfPeople;
         this._status = status;
         this._table = table;
+        this._customer = customer;
     }
 
     public get id(): number {
@@ -61,6 +65,14 @@ export default class Reservation {
 
     public set table(value: Table | null) {
         this._table = value;
+    }
+
+    public get customer(): Customer | null {
+        return this._customer
+    }
+
+    public set customer(value: Customer | null) {
+        this._customer = value
     }
 
     public reserveTable(): void {
