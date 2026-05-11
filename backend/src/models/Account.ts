@@ -1,6 +1,6 @@
-import { Role } from '../models/Role.js';
+import Role from '../models/Role.js';
 
-export class Account {
+export default class Account {
     protected id: number;
     protected name: string;
     protected phone: string;
