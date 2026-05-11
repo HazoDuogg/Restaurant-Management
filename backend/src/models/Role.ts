@@ -9,10 +9,24 @@ export default class Role {
         this.description = description;
     }
 
-    public getId(): number { return this.id; }
-    public getRoleName(): string { return this.roleName; }
-    public getDesCripTion(): string { return this.description; }
+    public getId() {
+        return this.id;
+    }
+    public setId(id: number) {
+        this.id = id;
+    }
 
+    public getRoleName() {
+        return this.roleName;
+    }
+    public setRoleName(roleName: string) {
+        this.roleName = roleName;
+    }
 
-
+    public getDescription() {
+        return this.description;
+    }
+    public setDescription(description: string) {
+        this.description = description;
+    }
 }

@@ -1,6 +1,6 @@
-import { Role } from '../models/Role.js';
+import Role from '../models/Role.js';
 
-export class Account {
+export default class Account {
     protected id: number;
     protected name: string;
     protected phone: string;
@@ -18,6 +18,56 @@ export class Account {
         this.password = password;
         this.role = role;
     }
+
+    public getId() {
+        return this.id;
+    }
+    public setId(id: number) {
+        this.id = id;
+    }
+
+    public getName() {
+        return this.name;
+    }
+    public setName(name: string) {
+        this.name = name;
+    }
+
+    public getPhone() {
+        return this.phone;
+    }
+    public setPhone(phone: string) {
+        this.phone = phone;
+    }
+
+    public getEmail() {
+        return this.email;
+    }
+    public setEmail(email: string) {
+        this.email = email;
+    }
+
+    public getUsername() {
+        return this.username;
+    }
+    public setUsername(username: string) {
+        this.username = username;
+    }
+
+    public getPassword() {
+        return this.password;
+    }
+    public setPassword(password: string) {
+        this.password = password;
+    }
+
+    public getRole() {
+        return this.role;
+    }
+    public setRole(role: Role) {
+        this.role = role;
+    }
+
 
     public login(): boolean {
         console.log(`Account ${this.username} Đăng nhập.`);

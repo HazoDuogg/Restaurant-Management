@@ -1,11 +1,11 @@
-import { Account } from './Account.js';
-import { Role } from './Role.js';
+import Account from './Account.js';
+import Role from './Role.js';
 
 
 export type Reservation = any;
 export type Order = any;
 
-export class Customer extends Account {
+export default class Customer extends Account {
     private customerId: string;
 
     constructor(
@@ -21,6 +21,14 @@ export class Customer extends Account {
         super(id, name, phone, email, username, password, role);
         this.customerId = customerId;
     }
+
+    public getCustomerId() {
+        return this.customerId;
+    }
+    public setCustomerId(customerId: string) {
+        this.customerId = customerId;
+    }
+
 
     public registerAccount(): Account {
         console.log("Khách hàng đã đăng ký một tài khoản mới.");

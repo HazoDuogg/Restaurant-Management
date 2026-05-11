@@ -1,8 +1,5 @@
-import { Account } from './Account.js';
-import { Role } from './Role.js';
-
-
-export type Report = any;
+import Account from './Account.js';
+import Role from './Role.js';
 
 export class Admin extends Account {
     constructor(id: number, name: string, phone: string, email: string, username: string, password: string, role: Role
