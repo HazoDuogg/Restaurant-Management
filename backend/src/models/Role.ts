@@ -1,4 +1,4 @@
-export class Role {
+export default class Role {
     protected id: number;
     protected roleName: string;
     protected description: string;
