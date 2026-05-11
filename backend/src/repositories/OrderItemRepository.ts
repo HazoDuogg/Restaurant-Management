@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client/extension'
 import { OrderItem } from '../models/OrderItem.js'
 import { MenuItem } from '../models/MenuItem.js'
 import { MenuStatus } from '../models/enums.js'
+import { prisma } from "../config/prisma.js"
 
-const prisma = new PrismaClient()
 
 export default class OrderItemRepository {
 

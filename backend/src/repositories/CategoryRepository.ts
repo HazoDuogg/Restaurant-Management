@@ -1,9 +1,7 @@
-import { PrismaClient } from "@prisma/client/extension";
 import Category from "../models/Category.js";
 import { MenuItem } from "../models/MenuItem.js";
 import { MenuStatus } from "../models/enums.js";
-
-const prisma = new PrismaClient();
+import { prisma } from "../config/prisma.js"
 
 export default class CategoryRepository {
 

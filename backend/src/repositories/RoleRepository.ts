@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client/extension";
 import Role from "../models/Role.js";
-
-const prisma = new PrismaClient();
+import { prisma } from "../config/prisma.js"
 
 export default class RoleRepository {
 

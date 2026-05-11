@@ -1,10 +1,8 @@
-import { PrismaClient } from "@prisma/client/extension";
 import Customer from "../models/Customer.js";
 import Admin from "../models/Admin.js";
 import Staff from "../models/Staff.js";
 import Role from "../models/Role.js";
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/prisma.js'
 
 export default class AccountRepository {
 
@@ -46,7 +44,7 @@ export default class AccountRepository {
         }
     }
 
-    async findById(id: number): Promise<Customer | Admin | Staff> {
+    async findById(id: number): Promise<Customer | Admin | Staff | null> {
         try {
             const account = await prisma.account.findUnique({
                 where: { id },
@@ -57,7 +55,9 @@ export default class AccountRepository {
                     customer: true
                 }
             })
-            const role = account.role ? new Role(account.id, account.roleName, null) : null;
+            if (!account)
+                return null;
+            const role = account.role ? new Role(account.role.id, account.role.name, null) : null;
             if (account.admin) {
                 return new Admin(
                     account.id, account.name, account.username, account.password,
@@ -74,7 +74,7 @@ export default class AccountRepository {
             } else {
                 return new Customer(
                     account.id, account.name, account.username, account.password,
-                    account.customer.customer_code ?? '',
+                    account.customer?.customer_code ?? '',
                     account.phone, account.email, role
                 );
             }
@@ -83,7 +83,7 @@ export default class AccountRepository {
         }
     }
 
-    async findByUsername(username: string): Promise<Customer | Admin | Staff> {
+    async findByUsername(username: string): Promise<Customer | Admin | Staff | null> {
         try {
             const account = await prisma.account.findUnique({
                 where: { username },
@@ -94,7 +94,9 @@ export default class AccountRepository {
                     customer: true
                 }
             });
-            const role = account.role ? new Role(account.id, account.roleName, null) : null;
+            if (!account)
+                return null;
+            const role = account.role ? new Role(account.role.id, account.role.name, null) : null;
             if (account.admin) {
                 return new Admin(
                     account.id, account.name, account.username, account.password,
@@ -111,7 +113,7 @@ export default class AccountRepository {
             } else {
                 return new Customer(
                     account.id, account.name, account.username, account.password,
-                    account.customer.customer_code ?? '',
+                    account.customer?.customer_code ?? '',
                     account.phone, account.email, role
                 );
             }

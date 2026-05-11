@@ -1,13 +1,10 @@
-import { PrismaClient } from '@prisma/client/extension'
 import Order from '../models/Order.js'
 import Customer from '../models/Customer.js'
 import Staff from '../models/Staff.js'
 import Table from '../models/Table.js'
-import { OrderItem } from '../models/OrderItem.js'
 import { MenuItem } from '../models/MenuItem.js'
 import { OrderStatus, TableStatus, MenuStatus } from '../models/enums.js'
-
-const prisma = new PrismaClient()
+import { prisma } from "../config/prisma.js"
 
 export default class OrderRepository {
 

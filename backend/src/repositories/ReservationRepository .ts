@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client/extension'
 import Reservation from '../models/Reservation.js'
 import Table from '../models/Table.js'
 import { ReservationStatus, TableStatus } from '../models/enums.js'
-
-const prisma = new PrismaClient()
+import { prisma } from "../config/prisma.js"
 
 export default class ReservationRepository {
 
