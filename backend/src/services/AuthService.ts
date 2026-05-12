@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
-import AccountRepository from "../repositories/AccountRepository .js";
 import CustomerRepository from "../repositories/CustomerRepository.js";
 import { issueAccessToken } from "../utils/auth.js";
 import Customer from "../models/Customer.js";
+import AccountRepository from "../repositories/AccountRepository.js";
 
 export class AuthService {
 
@@ -51,7 +51,7 @@ export class AuthService {
             if (!account) {
                 throw new Error('Tài khoản không tồn tại');
             }
-            const isMatch = bcrypt.compare(oldPassword, account.password);
+            const isMatch = await bcrypt.compare(oldPassword, account.password);
             if (!isMatch) {
                 throw new Error('Mật khẩu cũ không đúng')
             }
