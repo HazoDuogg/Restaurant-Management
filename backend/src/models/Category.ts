@@ -1,32 +1,3 @@
-<<<<<<< HEAD
-import MenuItem from "./MenuItem.js";
-
-export default class Category {
-  id: number;
-  name: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
-
-  menuItems: MenuItem[] = [];
-
-  constructor(data: Partial<Category> = {}) {
-    this.id = data.id ?? 0;
-    this.name = data.name ?? "";
-    this.description = data.description ?? "";
-    this.createdAt = data.createdAt ?? new Date();
-    this.updatedAt = data.updatedAt ?? new Date();
-    this.menuItems = data.menuItems ?? [];
-  }
-
-  public getId(): number {
-    return this.id;
-  }
-
-  public setId(id: number): void {
-    this.id = id;
-  }
-=======
 import { MenuItem } from './MenuItem.js';
 
 export default class Category {
@@ -106,5 +77,4 @@ export default class Category {
         this._menuItems = this._menuItems.filter(m => m.id !== itemId);
     }
 
->>>>>>> 6da82a0c5dca955aecc35586f60428b8dada0760
 }
