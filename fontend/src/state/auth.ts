@@ -2,11 +2,11 @@ import { create } from "zustand";
 
 type AuthState = {
     accessToken: string | null;
-    user: { id: number, role: string } | null;
+    user: { id: number, role: string, name: string } | null;
     login: (
         data: {
             accessToken: string;
-            user: { id: number, role: string };
+            user: { id: number, role: string, name: string };
         }
     ) => void;
     setAccessToken: (token: string) => void;
@@ -15,7 +15,7 @@ type AuthState = {
 
 export const useAuthStore = create<AuthState>((set) => ({
     accessToken: localStorage.getItem('accessToken'),
-    user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') as string) : null,
+    user: (() => { try { const v = localStorage.getItem('user'); return v ? JSON.parse(v) : null; } catch { return null; } })(),
     login: ({ accessToken, user }) => {
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('user', JSON.stringify(user));
