@@ -11,17 +11,17 @@ export default class OrderRepository {
     private mapToOrder(o: any): Order {
         const customer = o.customer?.account ? new Customer(
             o.customer.account_id, o.customer.account.name,
-            o.customer.account.password,
+            o.customer.account.username, o.customer.account.password,
             o.customer.customer_code ?? '',
-            o.customer.account.phone, o.customer.account.email ?? ''
+            o.customer.account.phone, o.customer.account.email
         ) : null
 
         const staff = o.staff?.account ? new Staff(
             o.staff.account_id, o.staff.account.name,
-            o.staff.account.password,
+            o.staff.account.username, o.staff.account.password,
             o.staff.staff_code ?? '', o.staff.position ?? '',
             o.staff.start_date,
-            o.staff.account.phone, o.staff.account.email ?? ''
+            o.staff.account.phone, o.staff.account.email
         ) : null
 
         const table = o.table ? new Table(

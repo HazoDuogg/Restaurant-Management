@@ -12,9 +12,9 @@ export default class CustomerRepository {
             return customer.map((c) => {
                 const role = c.account.role ? new Role(c.account.role.id, c.account.role?.name, null) : null;
                 return new Customer(
-                    c.account_id, c.account.name, c.account.password,
-                    c.customer_code ?? "",
-                    c.account.phone, c.account.email ?? '',
+                    c.account_id, c.account.name, c.account.username,
+                    c.account.password, c.customer_code ?? "",
+                    c.account.phone, c.account.email,
                     role
                 );
             });
@@ -33,9 +33,9 @@ export default class CustomerRepository {
                 return null;
             const role = customer.account.role ? new Role(customer.account.role.id, customer.account.name, null) : null;
             return new Customer(
-                customer.account.id, customer.account.name, customer.account.password,
-                customer.customer_code ?? "",
-                customer.account.phone, customer.account.email ?? '',
+                customer.account.id, customer.account.name, customer.account.username,
+                customer.account.password, customer.customer_code ?? "",
+                customer.account.phone, customer.account.email,
                 role
             );
         } catch (error) {

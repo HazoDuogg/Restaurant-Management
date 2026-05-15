@@ -1,7 +1,7 @@
-import Account from './Account.js';
+import Accout from './Account.js';
 import Role from './Role.js';
 
-export default class Customer extends Account {
+export default class Customer extends Accout {
 
     private _customerId: string;
 
@@ -11,7 +11,7 @@ export default class Customer extends Account {
         password: string,
         customerId: string,
         phone: string | null = null,
-        email: string = '',
+        email: string | null = null,
         role: Role | null = null
     ) {
         super(id, name, password, phone, email, role);
@@ -25,5 +25,11 @@ export default class Customer extends Account {
     public set customerId(value: string) {
         this._customerId = value;
     }
+
+    public registerAccount(): void { }
+
+    public makeReservation(reservationTime: Date, numberOfPeople: number): void { }
+
+    public placeOrder(tableId: number): void { }
 
 }

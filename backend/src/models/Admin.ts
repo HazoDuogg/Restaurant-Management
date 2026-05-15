@@ -1,30 +1,23 @@
-import Account from './Account.js';
+import Accout from './Account.js';
 import Role from './Role.js';
 
-export default class Admin extends Account {
+export default class Admin extends Accout {
 
     constructor(
         id: number,
         name: string,
         password: string,
         phone: string | null = null,
-        email: string = '',
+        email: string | null = null,
         role: Role | null = null
     ) {
         super(id, name, password, phone, email, role);
     }
 
-    public createStaffAccount(): Account {
-        console.log("Tài khoản nhân viên đã được tạo bởi Admin.");
-        return new Account(0, "New Staff", "", "", "", this.role);
-    }
+    public createStaffAccount(name: string, position: string, startDate: Date): void { }
 
-    public manageMenu(): void {
-        console.log("Admin đang quản lý menu.");
-    }
+    public manageMenu(): void { }
 
-    public viewReport(): void {
-        console.log("Admin đang xem báo cáo.");
-    }
+    public viewReport(fromDate: Date, toDate: Date): void { }
 
 }

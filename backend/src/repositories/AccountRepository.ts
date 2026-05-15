@@ -19,12 +19,12 @@ export default class AccountRepository {
                     return new Staff(
                         a.id, a.name, a.password,
                         a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
-                        a.phone, a.email ?? '', role
+                        a.phone, a.email, role
                     );
                 } else {
                     return new Customer(
                         a.id, a.name, a.password,
-                        a.customer?.customer_code ?? '', a.phone, a.email ?? '', role
+                        a.customer?.customer_code ?? '', a.phone, a.email, role
                     );
                 }
             });
@@ -47,12 +47,12 @@ export default class AccountRepository {
                 return new Staff(
                     a.id, a.name, a.password,
                     a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
-                    a.phone, a.email ?? '', role
+                    a.phone, a.email, role
                 );
             } else {
                 return new Customer(
                     a.id, a.name, a.password,
-                    a.customer?.customer_code ?? '', a.phone, a.email ?? '', role
+                    a.customer?.customer_code ?? '', a.phone, a.email, role
                 );
             }
         } catch (error) {
@@ -74,12 +74,12 @@ export default class AccountRepository {
                 return new Staff(
                     a.id, a.name, a.password,
                     a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
-                    a.phone, a.email ?? '', role
+                    a.phone, a.email, role
                 );
             } else {
                 return new Customer(
                     a.id, a.name, a.password,
-                    a.customer?.customer_code ?? '', a.phone, a.email ?? '', role
+                    a.customer?.customer_code ?? '', a.phone, a.email, role
                 );
             }
         } catch (error) {

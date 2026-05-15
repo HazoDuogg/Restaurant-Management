@@ -15,7 +15,7 @@ export default class Staff extends Account {
         position: string,
         startDate: Date | null = null,
         phone: string | null = null,
-        email: string = '',
+        email: string | null = null,
         role: Role | null = null
     ) {
         super(id, name, password, phone, email, role);
