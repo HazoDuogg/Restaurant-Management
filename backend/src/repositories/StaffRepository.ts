@@ -9,7 +9,7 @@ export default class StaffRepository {
             const staff = await prisma.staff.findMany({
                 include: { account: { include: { role: true } } }
             });
-            return staff.map((s) => {
+            return staff.map((s: any) => {
                 const role = s.account.role ? new Role(s.account.role.id, s.account.role.name, null) : null;
                 return new Staff(
                     s.account_id, s.account.name,
