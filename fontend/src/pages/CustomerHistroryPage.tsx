@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAuthStore } from "../state/auth";
 
 const reservations = [
     {
@@ -67,6 +68,20 @@ const filters = [
 
 export default function CustomerHistoryPage() {
     const [activeFilter, setActiveFilter] = useState("all");
+    const [showDropdown, setShowDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const user = useAuthStore((e) => e.user);
+    const logout = useAuthStore((e) => e.logout);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
 
     const filtered = activeFilter === "all"
         ? reservations
@@ -88,9 +103,26 @@ export default function CustomerHistoryPage() {
                         </a>
                     ))}
                 </div>
-                <div className="flex items-center gap-2.5 text-sm font-medium">
-                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">L</div>
-                    <span>Nguyễn Thị Lan</span>
+                <div className="relative" ref={dropdownRef}>
+                    <button
+                        onClick={() => setShowDropdown(v => !v)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer border-none bg-transparent"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {user?.name?.[0]?.toUpperCase() ?? "U"}
+                        </div>
+                        <span className="text-sm font-medium text-gray-800">{user?.name ?? "Khách hàng"}</span>
+                    </button>
+                    {showDropdown && (
+                        <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
+                            <button
+                                onClick={() => { logout(); setShowDropdown(false); }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
+                            >
+                                Đăng xuất
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

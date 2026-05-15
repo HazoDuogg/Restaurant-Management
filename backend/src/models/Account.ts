@@ -6,14 +6,12 @@ export default abstract class Accout {
     protected _name: string;
     protected _phone: string | null;
     protected _email: string | null;
-    protected _username: string;
     protected _password: string;
     protected _role: Role | null;
 
     constructor(
         id: number,
         name: string,
-        username: string,
         password: string,
         phone: string | null = null,
         email: string | null = null,
@@ -21,7 +19,6 @@ export default abstract class Accout {
     ) {
         this._id = id;
         this._name = name;
-        this._username = username;
         this._password = password;
         this._phone = phone;
         this._email = email;
@@ -60,14 +57,6 @@ export default abstract class Accout {
         this._email = value;
     }
 
-    public get username(): string {
-        return this._username;
-    }
-
-    public set username(value: string) {
-        this._username = value;
-    }
-
     public get password(): string {
         return this._password;
     }
@@ -85,7 +74,7 @@ export default abstract class Accout {
     }
 
     public login(): boolean {
-        return !!(this._username && this._password);
+        return !!(this._email && this._password);
     }
 
     public logout(): void { }

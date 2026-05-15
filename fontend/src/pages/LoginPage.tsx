@@ -1,14 +1,59 @@
 import { useState } from "react";
+import { api } from "../lib/api";
+import { useAuthStore } from "../state/auth";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
+
     const [showPassword, setShowPassword] = useState(false);
-    const [email, setEmail] = useState("admin@vietbep.vn");
-    const [password, setPassword] = useState("password123");
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const login = useAuthStore((s) => s.login);
+    const navigation = useNavigate();
+    const [error, setError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<{
+        email?: string;
+        password?: string;
+    }>({});
 
     const fillDemo = (demoEmail: string) => {
         setEmail(demoEmail);
     };
+
+    const fillDemoPassword = (demoPassword: string) => {
+        setPassword(demoPassword);
+    }
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setError(null);
+        setFieldErrors({});
+        setLoading(true);
+        try {
+            const res = await api.post('/auth/login', { email, password });
+            const data = res.data.data;
+            login(data);
+            const role = data.user?.role;
+            if (role === 'ADMIN') navigation('/admin');
+            else if (role === 'STAFF') navigation('/staff/tables');
+            else navigation('/');
+        } catch (error: unknown) {
+            if (
+                typeof error === 'object' &&
+                error !== null &&
+                'response' in error &&
+                typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string'
+            ) {
+                setError((error as { response: { data: { message: string } } }).response.data.message);
+            } else {
+                setError('Đăng nhập thất bại');
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-10">
@@ -70,69 +115,85 @@ export default function LoginPage() {
                         <span>Hệ thống tự động chuyển hướng theo vai trò sau khi đăng nhập thành công.</span>
                     </div>
 
-                    {/* Email */}
-                    <div className="mb-5">
-                        <label className="block text-sm font-semibold mb-1.5">Email hoặc số điện thoại</label>
-                        <input
-                            type="text"
-                            className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
-                            placeholder="Nhập email hoặc SĐT"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                    </div>
+                    <form onSubmit={handleSubmit}>
+                        {/* Error */}
+                        {error && (
+                            <div className="bg-red-50 border border-red-300 rounded-lg p-3 text-sm text-red-700 mb-5">
+                                {error}
+                            </div>
+                        )}
 
-                    {/* Password */}
-                    <div className="mb-5">
-                        <label className="block text-sm font-semibold mb-1.5">Mật khẩu</label>
-                        <div className="relative">
+                        {/* Email */}
+                        <div className="mb-5">
+                            <label className="block text-sm font-semibold mb-1.5">Email hoặc số điện thoại</label>
                             <input
-                                type={showPassword ? "text" : "password"}
-                                className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
-                                placeholder="Nhập mật khẩu"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                type="text"
+                                className={`w-full px-3.5 py-2.5 border-2 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition ${fieldErrors.email ? 'border-red-400' : 'border-gray-200'}`}
+                                placeholder="Nhập email hoặc SĐT"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
-                            <button
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
-                                {showPassword ? "🙈" : "👁"}
-                            </button>
+                            {fieldErrors.email && <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>}
                         </div>
-                    </div>
 
-                    {/* Remember & Forgot */}
-                    <div className="flex items-center justify-between mb-6">
-                        <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={remember}
-                                onChange={(e) => setRemember(e.target.checked)}
-                                className="accent-blue-600"
-                            />
-                            Ghi nhớ đăng nhập
-                        </label>
-                        <a href="#" className="text-sm text-blue-600 font-medium hover:underline">Quên mật khẩu?</a>
-                    </div>
+                        {/* Password */}
+                        <div className="mb-5">
+                            <label className="block text-sm font-semibold mb-1.5">Mật khẩu</label>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    className={`w-full px-3.5 py-2.5 border-2 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition ${fieldErrors.password ? 'border-red-400' : 'border-gray-200'}`}
+                                    placeholder="Nhập mật khẩu"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? "🙈" : "👁"}
+                                </button>
+                            </div>
+                            {fieldErrors.password && <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>}
+                        </div>
 
-                    {/* Submit */}
-                    <button className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-base font-semibold transition">
-                        Đăng nhập
-                    </button>
+                        {/* Remember & Forgot */}
+                        <div className="flex items-center justify-between mb-6">
+                            <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={remember}
+                                    onChange={(e) => setRemember(e.target.checked)}
+                                    className="accent-blue-600"
+                                />
+                                Ghi nhớ đăng nhập
+                            </label>
+                            <a href="#" className="text-sm text-blue-600 font-medium hover:underline">Quên mật khẩu?</a>
+                        </div>
+
+                        {/* Submit */}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-base font-semibold transition"
+                        >
+                            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                        </button>
+                    </form>
 
                     {/* Demo accounts */}
                     <div className="mt-8">
                         <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">🧪 Tài khoản demo</div>
                         <div className="grid grid-cols-3 gap-2">
                             {[
-                                { icon: "👤", role: "Khách hàng", email: "customer@vietbep.vn" },
-                                { icon: "👨‍💼", role: "Admin", email: "admin@vietbep.vn" },
-                                { icon: "👨‍🍳", role: "Nhân viên", email: "staff@vietbep.vn" },
+                                { icon: "👤", role: "Khách hàng", email: "customer@vietbep.vn", password: "password123" },
+                                { icon: "👨‍💼", role: "Admin", email: "admin@vietbep.vn", password: "password123" },
+                                { icon: "👨‍🍳", role: "Nhân viên", email: "staff@vietbep.vn", password: "password123" },
                             ].map((demo) => (
                                 <button
                                     key={demo.role}
-                                    onClick={() => fillDemo(demo.email)}
+                                    onClick={() => { fillDemo(demo.email); fillDemoPassword(demo.password); }}
                                     className="p-2.5 border-2 border-gray-200 rounded-lg text-center hover:border-blue-500 hover:bg-blue-50 transition"
                                 >
                                     <div className="text-xl mb-1">{demo.icon}</div>

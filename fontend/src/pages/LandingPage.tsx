@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuthStore } from "../state/auth";
 
 const NAV_LINKS = [
     { label: "Trang chủ", href: '#trangchu' },
@@ -42,6 +43,21 @@ const TESTIMONIALS = [
 
 export default function LandingPage() {
     const [activeTab, setActiveTab] = useState("Tất cả");
+    const [showDropdown, setShowDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const isLogin = useAuthStore((e) => e.accessToken);
+    const user = useAuthStore((e) => e.user);
+    const logout = useAuthStore((e) => e.logout);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
 
     const scrollTo = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
         e.preventDefault();
@@ -83,13 +99,51 @@ export default function LandingPage() {
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
                         Đang mở cửa
                     </span>
-                    <Link to={'/login'} className="px-4 py-2 rounded-lg border border-gray-200 text-gray-800 text-sm font-semibold hover:border-blue-500 hover:text-blue-600 transition-colors bg-transparent cursor-pointer">
-                        Đăng nhập
-                    </Link>
-                    <Link to={'/register'} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors border-none cursor-pointer">
-                        Đăng ký
-                    </Link>
+                    {isLogin && user ? (
+                        <div className="relative" ref={dropdownRef}>
+                            <button
+                                onClick={() => setShowDropdown(v => !v)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer border-none bg-transparent"
+                            >
+                                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                                    {user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-sm font-medium text-gray-800">{user.name}</span>
+                            </button>
+                            {showDropdown && (
+                                <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
+                                    <button
+                                        onClick={() => {
+                                            logout();
+                                            setShowDropdown(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
+                                    >
+                                        Đăng xuất
+                                    </button>
+
+                                    <Link
+                                        to="/customer-history"
+                                        onClick={() => setShowDropdown(false)}
+                                        className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    >
+                                        Lịch sử
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <>
+                            <Link to={'/login'} className="px-4 py-2 rounded-lg border border-gray-200 text-gray-800 text-sm font-semibold hover:border-blue-500 hover:text-blue-600 transition-colors bg-transparent cursor-pointer">
+                                Đăng nhập
+                            </Link>
+                            <Link to={'/register'} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors border-none cursor-pointer">
+                                Đăng ký
+                            </Link>
+                        </>
+                    )}
                 </div>
+
             </nav>
 
             {/* HERO */}
@@ -227,22 +281,52 @@ export default function LandingPage() {
                     Chọn thời gian phù hợp, chúng tôi sẽ chuẩn bị sẵn sàng đón tiếp bạn.
                 </p>
                 <div className="flex gap-3 max-w-2xl mx-auto rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.2)" }}>
-                    {[
-                        { label: "📅 Ngày", type: "date", defaultValue: "2024-12-25" },
-                        { label: "🕐 Giờ", type: "select", options: ["11:00", "12:00", "18:00", "19:00", "20:00"] },
-                        { label: "👥 Số người", type: "select", options: ["1 người", "2 người", "4 người", "6 người", "8+ người"] },
-                    ].map(f => (
-                        <div key={f.label} className="flex-1">
-                            <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>{f.label}</div>
-                            {f.type === "date" ? (
-                                <input type="date" defaultValue={f.defaultValue} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }} />
-                            ) : (
-                                <select className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}>
-                                    {f.options?.map(o => <option key={o} style={{ color: "#111", background: "#fff" }}>{o}</option>)}
-                                </select>
-                            )}
-                        </div>
-                    ))}
+                    {isLogin ? (
+                        [
+                            { label: "📅 Ngày", type: "date", defaultValue: new Date().toISOString().split("T")[0] },
+                            { label: "🕐 Giờ", type: "select", options: ["11:00", "12:00", "18:00", "19:00", "20:00"] },
+                            { label: "👥 Số người", type: "select", options: ["1 người", "2 người", "4 người", "6 người", "8+ người"] },
+                        ].map(f => (
+                            <div key={f.label} className="flex-1">
+                                <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>{f.label}</div>
+                                {f.type === "date" ? (
+                                    <input type="date" defaultValue={f.defaultValue} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }} />
+                                ) : (
+                                    <select className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}>
+                                        {f.options?.map(o => <option key={o} style={{ color: "#111", background: "#fff" }}>{o}</option>)}
+                                    </select>
+                                )}
+                            </div>
+                        ))
+                    ) : (
+                        [
+                            { label: "📅 Ngày", type: "date", defaultValue: new Date().toISOString().split("T")[0] },
+                            { label: "🕐 Giờ", type: "select", options: ["11:00", "12:00", "18:00", "19:00", "20:00"] },
+                            { label: "👥 Số người", type: "select", options: ["1 người", "2 người", "4 người", "6 người", "8+ người"] },
+                            { label: "📱 SĐT", type: "text", placeholder: "Nhập SĐT" }
+                        ].map(f => (
+                            <div key={f.label} className="flex-1">
+                                <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>{f.label}</div>
+                                {f.type === "date" ? (
+                                    <input type="date" defaultValue={f.defaultValue} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }} />
+                                ) : f.type === "select" ? (
+                                    <select className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}>
+                                        {f.options?.map(o => <option key={o} style={{ color: "#111", background: "#fff" }}>{o}</option>)}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        placeholder={f.placeholder}
+                                        className="w-full rounded-lg px-3 py-2.5 text-sm text-white border placeholder:text-gray-300"
+                                        style={{
+                                            background: "rgba(255,255,255,0.15)",
+                                            borderColor: "rgba(255,255,255,0.2)",
+                                        }}
+                                    />
+                                )}
+                            </div>
+                        ))
+                    )}
                     <div className="flex items-end">
                         <Link to="/reservation" className="px-7 py-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-white font-bold text-base border-none cursor-pointer transition-colors whitespace-nowrap no-underline">
                             Đặt bàn →
