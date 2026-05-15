@@ -1,18 +1,37 @@
 export default class Role {
-    protected id: number;
-    protected roleName: string;
-    protected description: string;
 
-    constructor(id: number, roleName: string, description: string) {
-        this.id = id;
-        this.roleName = roleName;
-        this.description = description;
+    private _id: number;
+    private _roleName: string;
+    private _description: string | null;
+
+    constructor(id: number, roleName: string, description: string | null = null) {
+        this._id = id;
+        this._roleName = roleName;
+        this._description = description;
     }
 
-    public getId(): number { return this.id; }
-    public getRoleName(): string { return this.roleName; }
-    public getDesCripTion(): string { return this.description; }
+    public get id(): number {
+        return this._id;
+    }
 
+    public set id(value: number) {
+        this._id = value;
+    }
 
+    public get roleName(): string {
+        return this._roleName;
+    }
+
+    public set roleName(value: string) {
+        this._roleName = value;
+    }
+
+    public get description(): string | null {
+        return this._description;
+    }
+
+    public set description(value: string | null) {
+        this._description = value;
+    }
 
 }

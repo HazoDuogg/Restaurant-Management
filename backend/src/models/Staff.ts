@@ -1,26 +1,51 @@
-import { Account } from './Account.js';
-import { Role } from './Role.js';
+import Account from './Account.js';
+import Role from './Role.js';
 
-export class Staff extends Account {
-    protected staffId: string;
-    protected position: string;
-    protected startDate: Date;
+export default class Staff extends Account {
+
+    private _staffId: string;
+    private _position: string;
+    private _startDate: Date | null;
 
     constructor(
         id: number,
         name: string,
-        phone: string,
-        email: string,
-        username: string,
         password: string,
-        role: Role,
         staffId: string,
         position: string,
-        startDate: Date
+        startDate: Date | null = null,
+        phone: string | null = null,
+        email: string = '',
+        role: Role | null = null
     ) {
-        super(id, name, phone, email, username, password, role);
-        this.staffId = staffId;
-        this.position = position;
-        this.startDate = startDate;
+        super(id, name, password, phone, email, role);
+        this._staffId = staffId;
+        this._position = position;
+        this._startDate = startDate;
     }
+
+    public get staffId(): string {
+        return this._staffId;
+    }
+
+    public set staffId(value: string) {
+        this._staffId = value;
+    }
+
+    public get position(): string {
+        return this._position;
+    }
+
+    public set position(value: string) {
+        this._position = value;
+    }
+
+    public get startDate(): Date | null {
+        return this._startDate;
+    }
+
+    public set startDate(value: Date | null) {
+        this._startDate = value;
+    }
+
 }

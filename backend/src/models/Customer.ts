@@ -1,39 +1,29 @@
-import { Account } from './Account.js';
-import { Role } from './Role.js';
+import Account from './Account.js';
+import Role from './Role.js';
 
+export default class Customer extends Account {
 
-export type Reservation = any;
-export type Order = any;
-
-export class Customer extends Account {
-    private customerId: string;
+    private _customerId: string;
 
     constructor(
         id: number,
         name: string,
-        phone: string,
-        email: string,
-        username: string,
         password: string,
-        role: Role,
-        customerId: string
+        customerId: string,
+        phone: string | null = null,
+        email: string = '',
+        role: Role | null = null
     ) {
-        super(id, name, phone, email, username, password, role);
-        this.customerId = customerId;
+        super(id, name, password, phone, email, role);
+        this._customerId = customerId;
     }
 
-    public registerAccount(): Account {
-        console.log("Khách hàng đã đăng ký một tài khoản mới.");
-        return this;
+    public get customerId(): string {
+        return this._customerId;
     }
 
-    public makeReservation(): Reservation {
-        console.log("Khách hàng đã đặt bàn.");
-        return {};
+    public set customerId(value: string) {
+        this._customerId = value;
     }
 
-    public placeOrder(): Order {
-        console.log("Khách hàng đã đặt món.");
-        return {};
-    }
 }
