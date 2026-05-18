@@ -40,7 +40,7 @@ export default class MenuItemRepository {
                 ) : null
             )
         } catch (error) {
-            throw new Error(`Không tìm thấy món ăn với ID ${id}: ${error}`)
+            throw new Error(`Không tìm thấy món ăn với ID ${id}: ${error}`);
         }
     }
 

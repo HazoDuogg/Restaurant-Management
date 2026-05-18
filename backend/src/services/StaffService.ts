@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
 import Staff from "../models/Staff.js";
-import Role from "../models/Role.js";
 import AccountRepository from "../repositories/AccountRepository.js";
 import StaffRepository from "../repositories/StaffRepository.js";
 import RoleRepository from "../repositories/RoleRepository.js";
+import { AccountStatus, StaffStatus } from "../models/enums.js";
 
 export class StaffService {
 
@@ -33,7 +33,7 @@ export class StaffService {
         const hashPass = await bcrypt.hash(password, 10);
         const staffCode = `STAFF-${Date.now()}`;
 
-        const staff = new Staff(0, name.trim(), hashPass, staffCode, position, startDate, phone, email, staffRole);
+        const staff = new Staff(0, name.trim(), hashPass, staffCode, position, startDate, phone, email, AccountStatus.ACTIVE, StaffStatus.ACTIVE, staffRole);
         await this.accountRepo.createAccount(staff);
 
         const created = await this.accountRepo.findByEmail(email);

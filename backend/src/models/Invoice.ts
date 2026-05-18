@@ -136,4 +136,19 @@ export default class Invoice {
         this._status = InvoiceStatus.PAID;
     }
 
+    public toJSON() {
+        return {
+            id: this._id,
+            invoiceCode: this._invoiceCode,
+            createdTime: this._createdTime,
+            totalAmount: this._totalAmount,
+            tax: this._tax,
+            discount: this._discount,
+            finalAmount: this._finalAmount,
+            status: this._status,
+            order: this._order,
+            details: this._details,
+        };
+    }
+
 }

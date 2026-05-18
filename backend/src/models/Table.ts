@@ -1,21 +1,24 @@
-import { TableStatus } from './enums.js';
+import { TableStatus, TableType } from './enums.js';
 
 export default class Table {
 
     private _id: number;
     private _tableNumber: number;
     private _capacity: number;
+    private _type: TableType;
     private _status: TableStatus;
 
     constructor(
         id: number,
         tableNumber: number,
         capacity: number,
+        type: TableType = TableType.NORMAL,
         status: TableStatus = TableStatus.AVAILABLE
     ) {
         this._id = id;
         this._tableNumber = tableNumber;
         this._capacity = capacity;
+        this._type = type;
         this._status = status;
     }
 
@@ -43,6 +46,14 @@ export default class Table {
         this._capacity = value;
     }
 
+    public get type(): TableType {
+        return this._type;
+    }
+
+    public set type(value: TableType) {
+        this._type = value;
+    }
+
     public get status(): TableStatus {
         return this._status;
     }
@@ -53,6 +64,16 @@ export default class Table {
 
     public updateStatus(status: TableStatus): void {
         this._status = status;
+    }
+
+    public toJSON() {
+        return {
+            id: this._id,
+            tableNumber: this._tableNumber,
+            capacity: this._capacity,
+            type: this._type,
+            status: this._status,
+        };
     }
 
 }

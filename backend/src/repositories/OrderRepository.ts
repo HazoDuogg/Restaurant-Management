@@ -3,7 +3,7 @@ import Customer from '../models/Customer.js'
 import Staff from '../models/Staff.js'
 import Table from '../models/Table.js'
 import { MenuItem } from '../models/MenuItem.js'
-import { OrderStatus, TableStatus, MenuStatus } from '../models/enums.js'
+import { OrderStatus, TableStatus, MenuStatus, TableType, AccountStatus, StaffStatus } from '../models/enums.js'
 import { prisma } from "../config/prisma.js"
 
 export default class OrderRepository {
@@ -11,22 +11,26 @@ export default class OrderRepository {
     private mapToOrder(o: any): Order {
         const customer = o.customer?.account ? new Customer(
             o.customer.account_id, o.customer.account.name,
-            o.customer.account.username, o.customer.account.password,
+            o.customer.account.password,
             o.customer.customer_code ?? '',
-            o.customer.account.phone, o.customer.account.email
+            o.customer.account.phone, o.customer.account.email,
+            o.customer.account.status as AccountStatus
         ) : null
 
         const staff = o.staff?.account ? new Staff(
             o.staff.account_id, o.staff.account.name,
-            o.staff.account.username, o.staff.account.password,
+            o.staff.account.password,
             o.staff.staff_code ?? '', o.staff.position ?? '',
             o.staff.start_date,
-            o.staff.account.phone, o.staff.account.email
+            o.staff.account.phone, o.staff.account.email,
+            o.staff.account.status as AccountStatus,
+            o.staff.status_work as StaffStatus
         ) : null
 
         const table = o.table ? new Table(
             o.table.id, o.table.table_number,
             o.table.capacity ?? 0,
+            o.table.table_type as TableType,
             o.table.status as TableStatus
         ) : null
 
@@ -119,9 +123,9 @@ export default class OrderRepository {
         }
     }
 
-    async create(order: Order): Promise<void> {
+    async create(order: Order): Promise<number> {
         try {
-            await prisma.orders.create({
+            const created = await prisma.orders.create({
                 data: {
                     order_time: order.orderTime,
                     status: order.status,
@@ -131,6 +135,7 @@ export default class OrderRepository {
                     table_id: order.table?.id ?? null
                 }
             })
+            return created.id
         } catch (error) {
             throw new Error(`Không thể tạo order: ${error}`)
         }
