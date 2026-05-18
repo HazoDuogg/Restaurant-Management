@@ -2,14 +2,14 @@ import { useState } from "react"
 import { Link, useNavigate, useLocation } from "react-router-dom"
 import StaffUserMenu from "../components/StaffUserMenu"
 
-interface CartItem {
+type CartItem = {
   id: number
   name: string
   price: number
   qty: number
 }
 
-interface OrderItem {
+type OrderItem = {
   name: string
   qty: number
   price: number
