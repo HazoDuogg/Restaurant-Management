@@ -1,5 +1,16 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useLocation } from "react-router-dom"
+import { useAuthStore } from "../state/auth"
+import { api } from "../lib/api"
+import StaffUserMenu from "../components/StaffUserMenu"
+
+type OrderItem = {
+  emoji: string
+  name: string
+  qty: number
+  price: number
+  total: number
+}
 
 const paymentMethods = [
   { icon: "💵", name: "Tiền mặt", desc: "Cash payment" },
@@ -8,33 +19,98 @@ const paymentMethods = [
   { icon: "📲", name: "Chuyển khoản", desc: "QR code" },
 ]
 
-const orderItems = [
-  { emoji: "🥗", name: "Gỏi Cuốn Tôm Thịt", qty: 2, price: 65000, total: 130000 },
-  { emoji: "🍜", name: "Phở Bò Đặc Biệt", qty: 1, price: 95000, total: 95000 },
-  { emoji: "🍗", name: "Gà Nướng Mắc Khén", qty: 1, price: 145000, total: 145000 },
-]
-
-const invoiceMeta = [
-  { k: "Số HĐ:", v: "#INV-20241225-042" },
-  { k: "Ngày:", v: "25/12/2024 · 18:31" },
-  { k: "Bàn:", v: "Bàn 07 (4 người)" },
-  { k: "Thu ngân:", v: "Nguyễn Thị Hoa" },
-]
-
 const quickAmounts = ["100,000", "200,000", "500,000", "1,000,000"]
-const TOTAL = 407000
-const SUBTOTAL = 370000
-const VAT = 37000
 
 const fmt = (n: number) => n.toLocaleString("vi-VN")
 const parseCash = (v: string) => parseInt(v.replace(/[^0-9]/g, ""), 10) || 0
 
 export default function StaffPaymentPage() {
   const [selectedMethod, setSelectedMethod] = useState(0)
-  const [cashGiven, setCashGiven] = useState("500,000")
-  const [voucher, setVoucher] = useState("")
+  const [cashGiven, setCashGiven] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const user = useAuthStore((s) => s.user)
   const [showSuccess, setShowSuccess] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const orderItems: OrderItem[] = location.state?.orderItems ?? []
+  const orderId: number | undefined = location.state?.orderId
+  const tableId: number | undefined = location.state?.tableId
+
+  const methodToEnum = ["CASH", "CREDIT_CARD", "BANK_TRANSFER", "BANK_TRANSFER"]
+
+  async function submitPayment() {
+    setError("")
+
+    if (selectedMethod === 0) {
+      const given = parseCash(cashGiven)
+      if (!cashGiven || given < TOTAL) {
+        setError("Số tiền khách đưa không đủ. Vui lòng nhập lại.")
+        return
+      }
+    }
+
+    if (!orderId) {
+      setError("Không tìm thấy mã đơn hàng. Vui lòng quay lại và thử lại.")
+      return
+    }
+
+    setLoading(true)
+    try {
+      await api.patch(`/orders/${orderId}/complete`)
+      const invoiceRes = await api.post("/invoices/generate", { orderId, taxRate: 0.1, discount: 0 })
+      const invoiceId: number = invoiceRes.data.data.invoiceId
+      await api.post("/payments", { invoiceId, paymentMethod: methodToEnum[selectedMethod] })
+      if (tableId) {
+        await api.patch(`/tables/${tableId}/status`, { status: "AVAILABLE" })
+      }
+      setShowSuccess(true)
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setError(msg ?? "Thanh toán thất bại. Vui lòng thử lại.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (orderItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-10 text-center max-w-sm w-full mx-4 shadow-md border border-gray-200">
+          <div className="text-5xl mb-4">🛒</div>
+          <div className="text-lg font-bold mb-2">Chưa có món nào</div>
+          <div className="text-sm text-gray-400 mb-6">Vui lòng chọn món trước khi thanh toán.</div>
+          <button
+            onClick={() => navigate("/staff/order")}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition"
+          >
+            ← Quay lại gọi món
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const now = new Date()
+  const invoiceDate = now.toLocaleDateString("vi-VN") + " · " + now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+  const invoiceId = "#INV-" + now.getFullYear() + String(now.getMonth() + 1).padStart(2, "0") + String(now.getDate()).padStart(2, "0") + "-" + String(now.getTime()).slice(-3)
+  const tableNumber: number | undefined = location.state?.tableNumber
+  const tableCapacity: number | undefined = location.state?.tableCapacity
+  const tableInfo = tableNumber
+    ? `Bàn ${String(tableNumber).padStart(2, "0")}${tableCapacity ? ` (${tableCapacity} người)` : ""}`
+    : "–"
+  const invoiceMeta = [
+    { k: "Số HĐ:", v: invoiceId },
+    { k: "Ngày:", v: invoiceDate },
+    { k: "Bàn:", v: tableInfo },
+    { k: "Thu ngân:", v: user?.name ?? "–" },
+  ]
+
+  const SUBTOTAL = orderItems.reduce((sum, item) => sum + item.total, 0)
+  const VAT = Math.round(SUBTOTAL * 0.1)
+  const TOTAL = SUBTOTAL + VAT
+  const exactStr = fmt(TOTAL)
 
   const change = parseCash(cashGiven) - TOTAL
 
@@ -47,12 +123,13 @@ export default function StaffPaymentPage() {
             ← Chi tiết order
           </Link>
           <span className="font-serif text-lg text-white">💳 Thanh toán</span>
-          <span className="bg-white/20 text-white px-3 py-1 rounded-full text-[13px] font-bold">🪑 Bàn 07</span>
+          {tableNumber && (
+            <span className="bg-white/20 text-white px-3 py-1 rounded-full text-[13px] font-bold">
+              🪑 Bàn {String(tableNumber).padStart(2, "0")}
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-2 text-white text-[13px]">
-          <div className="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center font-bold text-xs">H</div>
-          Nguyễn Thị Hoa
-        </div>
+        <StaffUserMenu />
       </div>
 
       <div className="max-w-[1000px] mx-auto px-6 py-6">
@@ -61,7 +138,7 @@ export default function StaffPaymentPage() {
           <div className="bg-white border border-gray-200 rounded-xl p-7">
             {/* Header */}
             <div className="text-center pb-5 mb-5 border-b-2 border-gray-200">
-              <div className="font-serif text-xl text-blue-600 mb-1">🍜 Việt Bếp</div>
+              <div className="font-sans text-xl text-blue-600 mb-1">🍜 Việt Bếp</div>
               <div className="text-xs text-gray-400 leading-relaxed">
                 123 Nguyễn Huệ, Q.1, TP.HCM · (028) 3822 1234
               </div>
@@ -128,23 +205,6 @@ export default function StaffPaymentPage() {
 
           {/* Right: Payment Actions */}
           <div>
-            {/* Voucher */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4">
-              <div className="text-[15px] font-bold mb-3">🏷️ Mã giảm giá / Voucher</div>
-              <div className="flex gap-2">
-                <input
-                  className="flex-1 px-3 py-2 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500"
-                  type="text"
-                  placeholder="Nhập mã voucher..."
-                  value={voucher}
-                  onChange={(e) => setVoucher(e.target.value)}
-                />
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700 transition">
-                  Áp dụng
-                </button>
-              </div>
-            </div>
-
             {/* Payment Method */}
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <div className="text-[15px] font-bold mb-3">💳 Phương thức thanh toán</div>
@@ -153,11 +213,10 @@ export default function StaffPaymentPage() {
                   <div
                     key={pm.name}
                     onClick={() => setSelectedMethod(idx)}
-                    className={`border-2 rounded-xl px-4 py-3.5 text-center cursor-pointer transition-all ${
-                      selectedMethod === idx
-                        ? "border-blue-600 bg-blue-50"
-                        : "border-gray-200 hover:border-blue-400"
-                    }`}
+                    className={`border-2 rounded-xl px-4 py-3.5 text-center cursor-pointer transition-all ${selectedMethod === idx
+                      ? "border-blue-600 bg-blue-50"
+                      : "border-gray-200 hover:border-blue-400"
+                      }`}
                   >
                     <div className="text-2xl mb-1.5">{pm.icon}</div>
                     <div className="text-[13px] font-bold">{pm.name}</div>
@@ -185,13 +244,13 @@ export default function StaffPaymentPage() {
                   <div className="mb-3">
                     <div className="text-[11px] text-gray-400 mb-2">Chọn nhanh:</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {[...quickAmounts, "407,000"].map((amt) => (
+                      {[...quickAmounts, exactStr].map((amt) => (
                         <button
                           key={amt}
                           onClick={() => setCashGiven(amt)}
                           className="px-3 py-1.5 border-[1.5px] border-gray-200 rounded-lg text-xs font-semibold bg-white hover:border-blue-400 hover:text-blue-600 transition-colors"
                         >
-                          {amt === "407,000" ? "Vừa đủ" : amt.replace(",000,000", "tr").replace(",000", "k")}
+                          {amt === exactStr ? "Vừa đủ" : amt.replace(",000,000", "tr").replace(",000", "k")}
                         </button>
                       ))}
                     </div>
@@ -205,14 +264,17 @@ export default function StaffPaymentPage() {
                 </div>
               )}
 
+              {error && (
+                <div className="mb-3 px-4 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 font-semibold">
+                  ⚠️ {error}
+                </div>
+              )}
               <button
-                onClick={() => setShowSuccess(true)}
-                className="w-full py-3.5 bg-emerald-500 text-white rounded-lg text-base font-bold hover:bg-emerald-600 transition"
+                onClick={submitPayment}
+                disabled={loading}
+                className="w-full py-3.5 bg-emerald-500 text-white rounded-lg text-base font-bold hover:bg-emerald-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                ✓ Xác nhận thanh toán {fmt(TOTAL)}đ
-              </button>
-              <button className="w-full mt-2 py-2.5 bg-white text-gray-600 border-[1.5px] border-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-50 transition">
-                🖨️ In hóa đơn
+                {loading ? "Đang xử lý..." : `✓ Xác nhận thanh toán ${fmt(TOTAL)}đ`}
               </button>
             </div>
           </div>
@@ -225,22 +287,16 @@ export default function StaffPaymentPage() {
           <div className="bg-white rounded-2xl p-10 text-center max-w-sm w-full mx-4 shadow-2xl">
             <div className="text-5xl mb-4">✅</div>
             <div className="font-serif text-xl font-bold mb-2">Thanh toán thành công!</div>
-            <div className="text-sm text-gray-500 mb-1.5">Bàn 07 · Tổng: {fmt(TOTAL)}đ</div>
+            <div className="text-sm text-gray-500 mb-1.5">{tableInfo} · Tổng: {fmt(TOTAL)}đ</div>
             <div className="text-[13px] text-emerald-600 font-semibold mb-6">
               Tiền thối: {change >= 0 ? `${fmt(change)}đ` : "–"}
             </div>
             <div className="flex gap-2.5">
               <button
                 onClick={() => navigate("/staff/tables")}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition"
+                className="w-full py-3 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition"
               >
                 → Về sơ đồ bàn
-              </button>
-              <button
-                onClick={() => setShowSuccess(false)}
-                className="flex-1 py-3 bg-gray-100 text-gray-700 border-[1.5px] border-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-200 transition"
-              >
-                In hóa đơn
               </button>
             </div>
           </div>

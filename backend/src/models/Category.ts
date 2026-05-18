@@ -77,4 +77,15 @@ export default class Category {
         this._menuItems = this._menuItems.filter(m => m.id !== itemId);
     }
 
+    public toJSON() {
+        return {
+            id: this._id,
+            name: this._name,
+            description: this._description,
+            createdAt: this._createdAt,
+            updatedAt: this._updatedAt,
+            menuItems: this._menuItems,
+        };
+    }
+
 }

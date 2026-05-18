@@ -48,6 +48,11 @@ export default function LandingPage() {
     const isLogin = useAuthStore((e) => e.accessToken);
     const user = useAuthStore((e) => e.user);
     const logout = useAuthStore((e) => e.logout);
+    const [name, setName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+    const [time, setTime] = useState("18:00");
+    const [people, setPeople] = useState("2 người");
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -122,13 +127,35 @@ export default function LandingPage() {
                                         Đăng xuất
                                     </button>
 
-                                    <Link
-                                        to="/customer-history"
-                                        onClick={() => setShowDropdown(false)}
-                                        className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    >
-                                        Lịch sử
-                                    </Link>
+                                    {user.role === "CUSTOMER" && (
+                                        <Link
+                                            to="/customer-history"
+                                            onClick={() => setShowDropdown(false)}
+                                            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            Lịch sử
+                                        </Link>
+                                    )}
+
+                                    {user.role === "ADMIN" && (
+                                        <Link
+                                            to="/admin"
+                                            onClick={() => setShowDropdown(false)}
+                                            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            Dashboard
+                                        </Link>
+                                    )}
+
+                                    {user.role === "STAFF" && (
+                                        <Link
+                                            to="/staff/tables"
+                                            onClick={() => setShowDropdown(false)}
+                                            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            Quản lý bàn
+                                        </Link>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -280,58 +307,86 @@ export default function LandingPage() {
                 <p className="text-base leading-[1.7] max-w-[480px] mx-auto mb-10" style={{ color: "rgba(255,255,255,0.75)" }}>
                     Chọn thời gian phù hợp, chúng tôi sẽ chuẩn bị sẵn sàng đón tiếp bạn.
                 </p>
-                <div className="flex gap-3 max-w-2xl mx-auto rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                <div className="max-w-2xl mx-auto rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.2)" }}>
                     {isLogin ? (
-                        [
-                            { label: "📅 Ngày", type: "date", defaultValue: new Date().toISOString().split("T")[0] },
-                            { label: "🕐 Giờ", type: "select", options: ["11:00", "12:00", "18:00", "19:00", "20:00"] },
-                            { label: "👥 Số người", type: "select", options: ["1 người", "2 người", "4 người", "6 người", "8+ người"] },
-                        ].map(f => (
-                            <div key={f.label} className="flex-1">
-                                <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>{f.label}</div>
-                                {f.type === "date" ? (
-                                    <input type="date" defaultValue={f.defaultValue} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }} />
-                                ) : (
-                                    <select className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}>
-                                        {f.options?.map(o => <option key={o} style={{ color: "#111", background: "#fff" }}>{o}</option>)}
-                                    </select>
-                                )}
+                        <div className="flex gap-3">
+                            <div className="flex-1">
+                                <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>📅 Ngày</div>
+                                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }} />
                             </div>
-                        ))
+                            <div className="flex-1">
+                                <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>🕐 Giờ</div>
+                                <select value={time} onChange={(e) => setTime(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}>
+                                    {["11:00", "12:00", "18:00", "19:00", "20:00"].map(o => <option key={o} style={{ color: "#111", background: "#fff" }}>{o}</option>)}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>👥 Số người</div>
+                                <select value={people} onChange={(e) => setPeople(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}>
+                                    {["1 người", "2 người", "4 người", "6 người", "8+ người"].map(o => <option key={o} style={{ color: "#111", background: "#fff" }}>{o}</option>)}
+                                </select>
+                            </div>
+                            <div className="flex items-end">
+                                <Link to="/reservation" state={{ name: user?.name, date, time, people }} className="px-7 py-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-white font-bold text-base border-none cursor-pointer transition-colors whitespace-nowrap no-underline">
+                                    Đặt bàn →
+                                </Link>
+                            </div>
+                        </div>
                     ) : (
-                        [
-                            { label: "📅 Ngày", type: "date", defaultValue: new Date().toISOString().split("T")[0] },
-                            { label: "🕐 Giờ", type: "select", options: ["11:00", "12:00", "18:00", "19:00", "20:00"] },
-                            { label: "👥 Số người", type: "select", options: ["1 người", "2 người", "4 người", "6 người", "8+ người"] },
-                            { label: "📱 SĐT", type: "text", placeholder: "Nhập SĐT" }
-                        ].map(f => (
-                            <div key={f.label} className="flex-1">
-                                <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>{f.label}</div>
-                                {f.type === "date" ? (
-                                    <input type="date" defaultValue={f.defaultValue} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }} />
-                                ) : f.type === "select" ? (
-                                    <select className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}>
-                                        {f.options?.map(o => <option key={o} style={{ color: "#111", background: "#fff" }}>{o}</option>)}
-                                    </select>
-                                ) : (
+                        <div className="flex flex-col gap-3">
+                            <div className="flex gap-3">
+                                <div className="flex-1">
+                                    <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>👤 Họ tên</div>
                                     <input
                                         type="text"
-                                        placeholder={f.placeholder}
-                                        className="w-full rounded-lg px-3 py-2.5 text-sm text-white border placeholder:text-gray-300"
-                                        style={{
-                                            background: "rgba(255,255,255,0.15)",
-                                            borderColor: "rgba(255,255,255,0.2)",
-                                        }}
+                                        placeholder="Nhập họ và tên"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        className="w-full rounded-lg px-3 py-2.5 text-sm text-white border placeholder:text-white/50"
+                                        style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}
                                     />
-                                )}
+                                </div>
+                                <div className="flex-1">
+                                    <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>📱 Số điện thoại</div>
+                                    <input
+                                        type="tel"
+                                        placeholder="Nhập số điện thoại"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        className="w-full rounded-lg px-3 py-2.5 text-sm text-white border placeholder:text-white/50"
+                                        style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}
+                                    />
+                                </div>
                             </div>
-                        ))
+                            <div className="flex gap-3">
+                                <div className="flex-1">
+                                    <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>📅 Ngày</div>
+                                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }} />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>🕐 Giờ</div>
+                                    <select value={time} onChange={(e) => setTime(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}>
+                                        {["11:00", "12:00", "18:00", "19:00", "20:00"].map(o => <option key={o} style={{ color: "#111", background: "#fff" }}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex-1">
+                                    <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>👥 Số người</div>
+                                    <select value={people} onChange={(e) => setPeople(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm text-white border" style={{ background: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}>
+                                        {["1 người", "2 người", "4 người", "6 người", "8+ người"].map(o => <option key={o} style={{ color: "#111", background: "#fff" }}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex items-end">
+                                    <Link
+                                        to="/reservation"
+                                        state={{ name, phone, date, time, people }}
+                                        className={`px-7 py-3 rounded-xl text-white font-bold text-base whitespace-nowrap no-underline transition-colors bg-amber-400 hover:bg-amber-500`}
+                                    >
+                                        Đặt bàn →
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
                     )}
-                    <div className="flex items-end">
-                        <Link to="/reservation" className="px-7 py-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-white font-bold text-base border-none cursor-pointer transition-colors whitespace-nowrap no-underline">
-                            Đặt bàn →
-                        </Link>
-                    </div>
                 </div>
                 <p className="mt-4 text-[13px]" style={{ color: "rgba(255,255,255,0.45)" }}>
                     Xác nhận qua email trong vòng 5 phút · Hủy miễn phí trước 2 giờ

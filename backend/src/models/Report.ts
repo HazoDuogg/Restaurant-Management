@@ -71,4 +71,14 @@ export default class Report {
         return this._totalRevenue;
     }
 
+    public toJSON() {
+        return {
+            id: this._id,
+            fromDate: this._fromDate,
+            toDate: this._toDate,
+            totalRevenue: this._totalRevenue,
+            createdAt: this._createdAt,
+        };
+    }
+
 }

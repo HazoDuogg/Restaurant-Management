@@ -34,4 +34,12 @@ export default class Role {
         this._description = value;
     }
 
+    public toJSON() {
+        return {
+            id: this._id,
+            roleName: this._roleName,
+            description: this._description,
+        };
+    }
+
 }

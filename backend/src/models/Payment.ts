@@ -88,4 +88,15 @@ export default class Payment {
         return this._amount > 0 && !!this._invoice;
     }
 
+    public toJSON() {
+        return {
+            id: this._id,
+            amount: this._amount,
+            paymentMethod: this._paymentMethod,
+            status: this._status,
+            paymentTime: this._paymentTime,
+            invoice: this._invoice,
+        };
+    }
+
 }

@@ -1,48 +1,154 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import AdminLayout from "../components/AdminLayout"
+import { api } from "../lib/api";
 
-const staffList = [
-  {
-    id: "NV001", name: "Trần Minh Tuấn", email: "tuant@vietbep.vn",
-    role: "Quản lý ca", phone: "0901 111 222", joinDate: "15/03/2022",
-    accountStatus: "active", workStatus: "working",
-    avatarBg: "bg-blue-500", initial: "T",
-  },
-  {
-    id: "NV002", name: "Nguyễn Thị Hoa", email: "hoan@vietbep.vn",
-    role: "Phục vụ", phone: "0912 222 333", joinDate: "01/06/2023",
-    accountStatus: "active", workStatus: "working",
-    avatarBg: "bg-emerald-500", initial: "N",
-  },
-  {
-    id: "NV003", name: "Lê Văn Khoa", email: "khoalv@vietbep.vn",
-    role: "Thu ngân", phone: "0923 333 444", joinDate: "10/08/2023",
-    accountStatus: "active", workStatus: "leave",
-    avatarBg: "bg-amber-500", initial: "L",
-  },
-  {
-    id: "NV004", name: "Phạm Thị Mai", email: "maip@vietbep.vn",
-    role: "Phục vụ", phone: "0934 444 555", joinDate: "20/01/2024",
-    accountStatus: "active", workStatus: "working",
-    avatarBg: "bg-violet-500", initial: "P",
-  },
-  {
-    id: "NV005", name: "Hoàng Văn Đức", email: "duch@vietbep.vn",
-    role: "Bếp trưởng", phone: "0945 555 666", joinDate: "05/11/2021",
-    accountStatus: "locked", workStatus: "resigned",
-    avatarBg: "bg-red-500", initial: "H",
-  },
-]
+type StaffItem = {
+  id: number,
+  name: string,
+  email: string | null,
+  role: { id: number, roleName: string } | null,
+  phone: string | null,
+  startDate: string | null,
+  status: "ACTIVE" | "LOOKED",
+  statusWork: "ACTIVE" | "ONLEAVE",
+  staffId: string,
+  position: string,
+}
+
+type NewStaffForm = {
+  name: string,
+  phone: string,
+  position: string,
+  joinDate: string,
+  email: string,
+  password: string,
+}
+
+const emptyForm: NewStaffForm = {
+  name: "",
+  phone: "",
+  position: "",
+  joinDate: "",
+  email: "",
+  password: "",
+}
 
 export default function AdminStaffPage() {
   const [showModal, setShowModal] = useState(false)
+  const [staffList, setStaffList] = useState<StaffItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingStaff, setEditingStaff] = useState<StaffItem | null>(null);
+  const [deletingStaff, setDeletingStaff] = useState<StaffItem | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<NewStaffForm>(emptyForm);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "ONLEAVE">("ALL");
+  const [positionFilter, setPositionFilter] = useState<"ALL" | "Phục vụ" | "Thu ngân" | "Bếp trưởng" | "Quản lý ca">("ALL");
+
+  const total = staffList.length;
+  const active = staffList.filter(s => s.statusWork === "ACTIVE").length;
+  const onLeave = staffList.filter(s => s.statusWork === "ONLEAVE").length;
+
+  const filterStaff = staffList
+    .filter(item => {
+      const q = searchQuery.toLowerCase();
+      const matchSearch = !q || item.name.toLowerCase().includes(q) || item.staffId.toLowerCase().includes(q) || (item.phone ?? "").includes(q);
+      const matchPosition = positionFilter === "ALL" || item.position === positionFilter;
+      const matchStatus = statusFilter === "ALL" || item.statusWork === statusFilter;
+      return matchSearch && matchPosition && matchStatus;
+    })
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get("/staff")
+      .then(res => { if (!cancelled) setStaffList(res.data.data ?? []); })
+      .catch(() => { if (!cancelled) setStaffList([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
+  const refreshStaffList = () => {
+    setLoading(true);
+    setRefreshKey(k => k + 1);
+  };
+
+  async function handleAddStaff() {
+    setError(null);
+    if (!form.name || !form.phone || !form.position || !form.joinDate || !form.email || !form.password) {
+      setError("Vui lòng điền đầy đủ thông tin.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.post("/staff", {
+        name: form.name,
+        phone: form.phone,
+        position: form.position,
+        startDate: form.joinDate,
+        email: form.email,
+        password: form.password,
+      });
+      setShowModal(false);
+      setForm(emptyForm);
+      refreshStaffList();
+    } catch (error) {
+      const axiosErr = error as { response?: { data?: { message?: string } } };
+      setError(axiosErr?.response?.data?.message ?? "Thêm nhân viên thất bại. Vui lòng thử lại.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleUpdateStaff() {
+    if (!editingStaff) return;
+    setError(null);
+    if (!form.name || !form.phone || !form.position || !form.joinDate) {
+      setError("Vui lòng điền đầy đủ thông tin.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.put(`/staff/${editingStaff.id}`, {
+        name: form.name,
+        phone: form.phone,
+        position: form.position,
+        startDate: form.joinDate,
+      });
+      setEditingStaff(null);
+      setForm(emptyForm);
+      refreshStaffList();
+    } catch (error) {
+      const axiosErr = error as { response?: { data?: { message?: string } } };
+      setError(axiosErr?.response?.data?.message ?? "Cập nhật nhân viên thất bại. Vui lòng thử lại.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteStaff() {
+    if (!deletingStaff) return;
+    setError(null);
+    setSaving(true);
+    try {
+      await api.delete(`/staff/${deletingStaff.id}`);
+      setDeletingStaff(null);
+      refreshStaffList();
+    } catch (error) {
+      const axiosErr = error as { response?: { data?: { message?: string } } };
+      setError(axiosErr?.response?.data?.message ?? "Xóa nhân viên thất bại. Vui lòng thử lại.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <AdminLayout
       title="👨‍💼 Quản lý Nhân viên"
       topbarRight={
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => { setForm(emptyForm); setShowModal(true); }}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[13px] font-semibold transition"
         >
           + Tạo tài khoản nhân viên
@@ -51,12 +157,11 @@ export default function AdminStaffPage() {
     >
       <div className="p-7">
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3.5 mb-6">
+        <div className="grid grid-cols-3 gap-3.5 mb-6">
           {[
-            { num: "14", label: "Tổng nhân viên", color: "" },
-            { num: "11", label: "Đang hoạt động", color: "text-emerald-500" },
-            { num: "2", label: "Đang nghỉ phép", color: "text-amber-500" },
-            { num: "1", label: "Đã nghỉ việc", color: "text-gray-400" },
+            { num: total, label: "Tổng nhân viên", color: "" },
+            { num: active, label: "Đang hoạt động", color: "text-emerald-500" },
+            { num: onLeave, label: "Đang nghỉ phép", color: "text-amber-500" },
           ].map((s) => (
             <div key={s.label} className="bg-white border border-gray-200 rounded-xl px-4 py-4">
               <div className={`text-2xl font-bold ${s.color}`}>{s.num}</div>
@@ -70,15 +175,26 @@ export default function AdminStaffPage() {
           <input
             type="text"
             placeholder="🔍 Tìm tên, mã NV, SĐT..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
             className="flex-1 min-w-[200px] max-w-[300px] px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500"
           />
-          <select className="px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm bg-white outline-none">
-            <option>Tất cả chức vụ</option>
-            {["Phục vụ", "Thu ngân", "Bếp trưởng", "Quản lý ca"].map((o) => <option key={o}>{o}</option>)}
+          <select
+            value={positionFilter}
+            onChange={e => setPositionFilter(e.target.value as typeof positionFilter)}
+            className="px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm bg-white outline-none"
+          >
+            <option value="ALL">Tất cả chức vụ</option>
+            {["Phục vụ", "Thu ngân", "Bếp trưởng", "Quản lý ca"].map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
-          <select className="px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm bg-white outline-none">
-            <option>Tất cả trạng thái</option>
-            {["Đang hoạt động", "Nghỉ phép", "Nghỉ việc"].map((o) => <option key={o}>{o}</option>)}
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm bg-white outline-none"
+          >
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="ACTIVE">Đang hoạt động</option>
+            <option value="ONLEAVE">Nghỉ phép</option>
           </select>
         </div>
 
@@ -95,24 +211,30 @@ export default function AdminStaffPage() {
               </tr>
             </thead>
             <tbody>
-              {staffList.map((staff) => (
+              {loading ? (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">Đang tải...</td></tr>
+              ) : filterStaff.length === 0 ? (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">Không tìm thấy nhân viên phù hợp.</td></tr>
+              ) : filterStaff.map((staff) => (
                 <tr key={staff.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3.5 border-b border-gray-100">
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-full ${staff.avatarBg} text-white flex items-center justify-center font-bold text-sm flex-shrink-0`}>
-                        {staff.initial}
+                      <div className="w-9 h-9 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                        {staff.name.charAt(0)}
                       </div>
                       <div>
                         <div className="text-sm font-semibold">{staff.name}</div>
-                        <div className="text-xs text-gray-400">{staff.id} · {staff.email}</div>
+                        <div className="text-xs text-gray-400">{staff.staffId} · {staff.email}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-sm border-b border-gray-100">{staff.role}</td>
-                  <td className="px-4 py-3.5 text-sm border-b border-gray-100">{staff.phone}</td>
-                  <td className="px-4 py-3.5 text-sm border-b border-gray-100">{staff.joinDate}</td>
+                  <td className="px-4 py-3.5 text-sm border-b border-gray-100">{staff.position}</td>
+                  <td className="px-4 py-3.5 text-sm border-b border-gray-100">{staff.phone ?? "—"}</td>
+                  <td className="px-4 py-3.5 text-sm border-b border-gray-100">
+                    {staff.startDate ? new Date(staff.startDate).toLocaleDateString("vi-VN") : "—"}
+                  </td>
                   <td className="px-4 py-3.5 border-b border-gray-100">
-                    {staff.accountStatus === "active" ? (
+                    {staff.status === "ACTIVE" ? (
                       <span className="inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
                         Hoạt động
                       </span>
@@ -123,30 +245,38 @@ export default function AdminStaffPage() {
                     )}
                   </td>
                   <td className="px-4 py-3.5 border-b border-gray-100">
-                    {staff.workStatus === "working" && (
+                    {staff.statusWork === "ACTIVE" && (
                       <span className="inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Đang làm</span>
                     )}
-                    {staff.workStatus === "leave" && (
+                    {staff.statusWork === "ONLEAVE" && (
                       <span className="inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">Nghỉ phép</span>
-                    )}
-                    {staff.workStatus === "resigned" && (
-                      <span className="inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-800">Nghỉ việc</span>
                     )}
                   </td>
                   <td className="px-4 py-3.5 border-b border-gray-100">
                     <div className="flex gap-1.5">
-                      <button className="px-3.5 py-1.5 text-xs font-semibold border-[1.5px] border-gray-200 bg-white rounded-md hover:bg-gray-50 transition">
+                      <button
+                        onClick={() => {
+                          setEditingStaff(staff);
+                          setForm({
+                            name: staff.name,
+                            phone: staff.phone ?? "",
+                            position: staff.position,
+                            joinDate: staff.startDate ? staff.startDate.slice(0, 10) : "",
+                            email: staff.email ?? "",
+                            password: "",
+                          });
+                          setError(null);
+                        }}
+                        className="px-3.5 py-1.5 text-xs font-semibold border-[1.5px] border-gray-200 bg-white rounded-md hover:bg-gray-50 transition"
+                      >
                         ✏️ Sửa
                       </button>
-                      {staff.accountStatus === "active" ? (
-                        <button className="px-3.5 py-1.5 text-xs font-semibold bg-red-50 text-red-500 border-[1.5px] border-red-200 rounded-md hover:bg-red-100 transition">
-                          🔒 Khóa
-                        </button>
-                      ) : (
-                        <button className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 border-[1.5px] border-emerald-200 rounded-md hover:bg-emerald-100 transition">
-                          🔓 Mở khóa
-                        </button>
-                      )}
+                      <button
+                        onClick={() => setDeletingStaff(staff)}
+                        className="px-3.5 py-1.5 text-xs font-semibold bg-red-50 text-red-500 border-[1.5px] border-red-200 rounded-md hover:bg-red-100 transition"
+                      >
+                        🗑️ Xóa
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -156,16 +286,15 @@ export default function AdminStaffPage() {
 
           {/* Pagination */}
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-200">
-            <div className="text-[13px] text-gray-400">Hiển thị 1–5 / 14 nhân viên</div>
+            <div className="text-[13px] text-gray-400">Hiển thị {filterStaff.length} / {total} nhân viên</div>
             <div className="flex gap-1">
               {["‹", "1", "2", "3", "›"].map((p, i) => (
                 <button
                   key={i}
-                  className={`w-8 h-8 border-[1.5px] rounded-md text-[13px] font-medium flex items-center justify-center ${
-                    p === "1"
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                  }`}
+                  className={`w-8 h-8 border-[1.5px] rounded-md text-[13px] font-medium flex items-center justify-center ${p === "1"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                    }`}
                 >
                   {p}
                 </button>
@@ -187,6 +316,9 @@ export default function AdminStaffPage() {
               <div className="bg-amber-50 border border-amber-300 rounded-lg px-3.5 py-2.5 text-[13px] text-amber-800 mb-5">
                 ⚠️ Tài khoản nhân viên chỉ có thể được tạo bởi Admin. Mật khẩu tạm thời sẽ gửi qua email.
               </div>
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5 text-[13px] text-red-700 mb-4">{error}</div>
+              )}
 
               <div className="text-[12px] font-bold text-gray-400 uppercase tracking-widest mb-3 pb-1.5 border-b border-gray-200">
                 Thông tin cá nhân
@@ -194,26 +326,44 @@ export default function AdminStaffPage() {
               <div className="grid grid-cols-2 gap-3.5 mb-0">
                 <div className="mb-3.5">
                   <label className="block text-[13px] font-semibold mb-1.5">Họ và tên *</label>
-                  <input type="text" placeholder="Nguyễn Văn A" className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition" />
-                </div>
-                <div className="mb-3.5">
-                  <label className="block text-[13px] font-semibold mb-1.5">Mã nhân viên *</label>
-                  <input type="text" defaultValue="NV015" className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition" />
+                  <input
+                    type="text"
+                    placeholder="Nguyễn Văn A"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition"
+                  />
                 </div>
                 <div className="mb-3.5">
                   <label className="block text-[13px] font-semibold mb-1.5">Số điện thoại *</label>
-                  <input type="tel" placeholder="0901 234 567" className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition" />
+                  <input
+                    type="tel"
+                    placeholder="0901 234 567"
+                    value={form.phone}
+                    onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition"
+                  />
                 </div>
                 <div className="mb-3.5">
                   <label className="block text-[13px] font-semibold mb-1.5">Chức vụ *</label>
-                  <select className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500">
+                  <select
+                    value={form.position}
+                    onChange={e => setForm(f => ({ ...f, position: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500"
+                  >
+                    <option value="">-- Chọn chức vụ --</option>
                     {["Phục vụ", "Thu ngân", "Bếp trưởng", "Quản lý ca"].map((o) => <option key={o}>{o}</option>)}
                   </select>
                 </div>
-              </div>
-              <div className="mb-5">
-                <label className="block text-[13px] font-semibold mb-1.5">Ngày vào làm *</label>
-                <input type="date" defaultValue="2024-12-25" className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition" />
+                <div className="mb-3.5">
+                  <label className="block text-[13px] font-semibold mb-1.5">Ngày vào làm *</label>
+                  <input
+                    type="date"
+                    value={form.joinDate}
+                    onChange={e => setForm(f => ({ ...f, joinDate: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition"
+                  />
+                </div>
               </div>
 
               <div className="text-[12px] font-bold text-gray-400 uppercase tracking-widest mb-3 pb-1.5 border-b border-gray-200">
@@ -221,22 +371,139 @@ export default function AdminStaffPage() {
               </div>
               <div className="mb-3.5">
                 <label className="block text-[13px] font-semibold mb-1.5">Email đăng nhập *</label>
-                <input type="email" placeholder="nhanvien@vietbep.vn" className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition" />
+                <input
+                  type="email"
+                  placeholder="nhanvien@vietbep.vn"
+                  value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition"
+                />
               </div>
               <div>
                 <label className="block text-[13px] font-semibold mb-1.5">Mật khẩu tạm thời *</label>
-                <input type="text" defaultValue="VietBep@2024" className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition" />
+                <input
+                  type="text"
+                  placeholder="Ít nhất 6 ký tự"
+                  value={form.password}
+                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition"
+                />
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => { setShowModal(false); setError(null); }}
                 className="px-4 py-2 border-[1.5px] border-gray-200 rounded-lg text-[13px] font-semibold bg-white hover:bg-gray-50 transition"
               >
                 Hủy
               </button>
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[13px] font-semibold transition">
-                Tạo tài khoản & Gửi email
+              <button
+                onClick={handleAddStaff}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-[13px] font-semibold transition"
+              >
+                {saving ? "Đang tạo..." : "Tạo tài khoản"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Staff Modal */}
+      {editingStaff && (
+        <div className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
+              <div className="text-base font-bold">✏️ Cập nhật nhân viên</div>
+              <button onClick={() => { setEditingStaff(null); setError(null); }} className="text-gray-400 text-xl hover:text-gray-600">×</button>
+            </div>
+            <div className="p-6">
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5 text-[13px] text-red-700 mb-4">{error}</div>
+              )}
+              <div className="grid grid-cols-2 gap-3.5">
+                <div className="mb-3.5">
+                  <label className="block text-[13px] font-semibold mb-1.5">Họ và tên *</label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition"
+                  />
+                </div>
+                <div className="mb-3.5">
+                  <label className="block text-[13px] font-semibold mb-1.5">Số điện thoại *</label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition"
+                  />
+                </div>
+                <div className="mb-3.5">
+                  <label className="block text-[13px] font-semibold mb-1.5">Chức vụ *</label>
+                  <select
+                    value={form.position}
+                    onChange={e => setForm(f => ({ ...f, position: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500"
+                  >
+                    {["Phục vụ", "Thu ngân", "Bếp trưởng", "Quản lý ca"].map((o) => <option key={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div className="mb-3.5">
+                  <label className="block text-[13px] font-semibold mb-1.5">Ngày vào làm *</label>
+                  <input
+                    type="date"
+                    value={form.joinDate}
+                    onChange={e => setForm(f => ({ ...f, joinDate: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 transition"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
+              <button
+                onClick={() => { setEditingStaff(null); setError(null); }}
+                className="px-4 py-2 border-[1.5px] border-gray-200 rounded-lg text-[13px] font-semibold bg-white hover:bg-gray-50 transition"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleUpdateStaff}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-[13px] font-semibold transition"
+              >
+                {saving ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingStaff && (
+        <div className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[400px] shadow-2xl p-6">
+            <div className="text-base font-bold mb-2">Xác nhận xóa nhân viên</div>
+            <p className="text-sm text-gray-500 mb-5">
+              Bạn có chắc muốn xóa nhân viên <span className="font-semibold text-gray-800">{deletingStaff.name}</span>? Hành động này không thể hoàn tác.
+            </p>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5 text-[13px] text-red-700 mb-4">{error}</div>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setDeletingStaff(null); setError(null); }}
+                className="px-4 py-2 border-[1.5px] border-gray-200 rounded-lg text-[13px] font-semibold bg-white hover:bg-gray-50 transition"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleDeleteStaff}
+                disabled={saving}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-[13px] font-semibold transition"
+              >
+                {saving ? "Đang xóa..." : "Xóa nhân viên"}
               </button>
             </div>
           </div>

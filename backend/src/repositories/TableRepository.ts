@@ -1,5 +1,5 @@
 import Table from '../models/Table.js'
-import { TableStatus } from '../models/enums.js'
+import { TableStatus, TableType } from '../models/enums.js'
 import { prisma } from "../config/prisma.js"
 
 export default class TableRepository {
@@ -11,6 +11,7 @@ export default class TableRepository {
                 t.id,
                 t.table_number,
                 t.capacity ?? 0,
+                t.table_type as TableType,
                 t.status as TableStatus
             ))
         } catch (error) {
@@ -28,6 +29,7 @@ export default class TableRepository {
                 t.id,
                 t.table_number,
                 t.capacity ?? 0,
+                t.table_type as TableType,
                 t.status as TableStatus
             )
         } catch (error) {
@@ -44,6 +46,7 @@ export default class TableRepository {
                 t.id,
                 t.table_number,
                 t.capacity ?? 0,
+                t.table_type as TableType,
                 t.status as TableStatus
             ))
         } catch (error) {
@@ -60,6 +63,7 @@ export default class TableRepository {
                 t.id,
                 t.table_number,
                 t.capacity ?? 0,
+                t.table_type as TableType,
                 t.status as TableStatus
             ))
         } catch (error) {
@@ -73,6 +77,7 @@ export default class TableRepository {
                 data: {
                     table_number: table.tableNumber,
                     capacity: table.capacity,
+                    table_type: table.type,
                     status: table.status
                 }
             })
