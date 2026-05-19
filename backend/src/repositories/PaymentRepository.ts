@@ -48,17 +48,6 @@ export default class PaymentRepository {
         }
     }
 
-    async findByStatus(status: PaymentStatus): Promise<Payment[]> {
-        try {
-            const payments = await prisma.payment.findMany({
-                where: { status }
-            })
-            return payments.map((p: any) => this.mapToPayment(p))
-        } catch (error) {
-            throw new Error(`Không thể lấy danh sách thanh toán theo trạng thái "${status}": ${error}`)
-        }
-    }
-
     async create(payment: Payment, invoiceId: number): Promise<void> {
         try {
             await prisma.payment.create({

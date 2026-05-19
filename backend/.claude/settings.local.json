@@ -13,7 +13,10 @@
       "PowerShell(Get-Process -Name \"node\",\"nodemon\",\"ts-node\",\"tsx\" -ErrorAction SilentlyContinue)",
       "PowerShell(Get-Process)",
       "PowerShell(Get-Process -Id 6500,9772,14976,22260,29132 | ForEach-Object { $p = $_; try { $cmdline = \\(Get-WmiObject Win32_Process -Filter \"ProcessId=$\\($p.Id\\)\"\\).CommandLine; [PSCustomObject]@{Id=$p.Id;Name=$p.Name;CommandLine=$cmdline} } catch { [PSCustomObject]@{Id=$p.Id;Name=$p.Name;CommandLine=\"N/A\"} } } | Format-List)",
-      "PowerShell(Stop-Process -Id 22260,29132 -Force -ErrorAction SilentlyContinue)"
+      "PowerShell(Stop-Process -Id 22260,29132 -Force -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem -Path \"d:\\\\CNPM\\\\Restaurant_Management\\\\backend\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\CNPM\\\\Restaurant_Management\\\\backend\" -Recurse -File | Where-Object {$_.Extension -in @\\('.js', '.ts'\\)} | Select-Object FullName | head -100)"
     ]
   }
 }

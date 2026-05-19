@@ -7,15 +7,15 @@ export default class AuthController {
 
     async login(req: Request, res: Response): Promise<void> {
         try {
-            const { email, password } = req.body;
-            if (!email || !password) {
+            const { identifier, password } = req.body;
+            if (!identifier || !password) {
                 res.status(400).json({
                     success: false,
-                    message: "Vui lòng nhập email và mật khẩu"
+                    message: "Vui lòng nhập email/số điện thoại và mật khẩu"
                 });
                 return;
             }
-            const result = await authService.login(email, password);
+            const result = await authService.login(identifier, password);
             res.status(200).json({
                 success: true,
                 message: "Đăng nhập thành công!!",
@@ -24,7 +24,7 @@ export default class AuthController {
         } catch (error) {
             res.status(401).json({
                 success: false,
-                message: `${error}`
+                message: error instanceof Error ? error.message : `${error}`
             })
         }
     }
@@ -47,7 +47,7 @@ export default class AuthController {
         } catch (error) {
             res.status(400).json({
                 success: false,
-                message: `${error}`
+                message: error instanceof Error ? error.message : `${error}`
             });
         }
     }
@@ -78,7 +78,7 @@ export default class AuthController {
         } catch (error) {
             res.status(400).json({
                 success: false,
-                message: `${error}`
+                message: error instanceof Error ? error.message : `${error}`
             });
         }
     }

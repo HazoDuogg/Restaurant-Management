@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 export default function LoginPage() {
 
     const [showPassword, setShowPassword] = useState(false);
-    const [email, setEmail] = useState('');
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -14,12 +14,12 @@ export default function LoginPage() {
     const navigation = useNavigate();
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<{
-        email?: string;
+        identifier?: string;
         password?: string;
     }>({});
 
     const fillDemo = (demoEmail: string) => {
-        setEmail(demoEmail);
+        setIdentifier(demoEmail);
     };
 
     const fillDemoPassword = (demoPassword: string) => {
@@ -32,7 +32,7 @@ export default function LoginPage() {
         setFieldErrors({});
         setLoading(true);
         try {
-            const res = await api.post('/auth/login', { email, password });
+            const res = await api.post('/auth/login', { identifier, password });
             const data = res.data.data;
             login(data);
             const role = data.user?.role;
@@ -128,12 +128,12 @@ export default function LoginPage() {
                             <label className="block text-sm font-semibold mb-1.5">Email hoặc số điện thoại</label>
                             <input
                                 type="text"
-                                className={`w-full px-3.5 py-2.5 border-2 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition ${fieldErrors.email ? 'border-red-400' : 'border-gray-200'}`}
+                                className={`w-full px-3.5 py-2.5 border-2 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition ${fieldErrors.identifier ? 'border-red-400' : 'border-gray-200'}`}
                                 placeholder="Nhập email hoặc SĐT"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
                             />
-                            {fieldErrors.email && <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>}
+                            {fieldErrors.identifier && <p className="text-xs text-red-500 mt-1">{fieldErrors.identifier}</p>}
                         </div>
 
                         {/* Password */}

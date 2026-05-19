@@ -86,14 +86,5 @@ export default class InvoiceDetailRepository {
         }
     }
 
-    async deleteByInvoice(invoiceId: number): Promise<void> {
-        try {
-            await prisma.invoice_detail.deleteMany({
-                where: { invoice_id: invoiceId }
-            })
-        } catch (error) {
-            throw new Error(`Không thể xóa chi tiết của hóa đơn ID ${invoiceId}: ${error}`)
-        }
-    }
 
 }
