@@ -34,7 +34,7 @@ export default function LoginPage() {
         try {
             const res = await api.post('/auth/login', { identifier, password });
             const data = res.data.data;
-            login(data);
+            login(data, remember);
             const role = data.user?.role;
             if (role === 'ADMIN') navigation('/admin');
             else if (role === 'STAFF') navigation('/staff/tables');

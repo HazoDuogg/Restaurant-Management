@@ -44,7 +44,10 @@ export default function StaffOrderPage() {
   const tableNumber: number | undefined = location.state?.tableNumber
   const tableCapacity: number | undefined = location.state?.capacity
   const existingOrderId: number | undefined = location.state?.orderId
-  const [cart, setCart] = useState<CartItem[]>(location.state?.cart ?? [])
+  const addItemsToExisting: boolean = location.state?.addItemsToExisting ?? false
+  const [cart, setCart] = useState<CartItem[]>(
+    existingOrderId && addItemsToExisting ? [] : (location.state?.cart ?? [])
+  )
   const [note, setNote] = useState(location.state?.note ?? "")
 
   useEffect(() => {
@@ -90,11 +93,33 @@ export default function StaffOrderPage() {
 
   const handleSubmitOrder = async () => {
     if (cart.length === 0) return
+    if (addItemsToExisting) {
+      if (!existingOrderId) {
+        alert("Không tìm thấy mã order. Vui lòng quay lại chi tiết order và thử lại.")
+        return
+      }
+      setSubmitting(true)
+      try {
+        for (const item of cart) {
+          await api.post(`/orders/${existingOrderId}/items`, { menuItemId: item.id, quantity: item.qty })
+        }
+        await api.patch(`/orders/${existingOrderId}/confirm`)
+        navigate("/staff/order/detail", { state: { cart, note, tableNumber, tableCapacity, orderId: existingOrderId, tableId } })
+      } catch (err) {
+        alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Gửi order thất bại")
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
     if (existingOrderId) {
       navigate("/staff/order/detail", { state: { cart, note, tableNumber, tableCapacity, orderId: existingOrderId, tableId } })
       return
     }
-    if (!tableId || !user) return
+    if (!tableId || !user) {
+      alert("Không tìm thấy thông tin bàn. Vui lòng quay lại sơ đồ bàn.")
+      return
+    }
     setSubmitting(true)
     try {
       const res = await api.post("/orders", { staffId: user.id, tableId })

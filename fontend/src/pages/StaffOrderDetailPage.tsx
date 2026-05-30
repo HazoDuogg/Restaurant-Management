@@ -1,13 +1,7 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useNavigate, useLocation } from "react-router-dom"
+import { api } from "../lib/api"
 import StaffUserMenu from "../components/StaffUserMenu"
-
-type CartItem = {
-  id: number
-  name: string
-  price: number
-  qty: number
-}
 
 type OrderItem = {
   name: string
@@ -20,23 +14,53 @@ type OrderItem = {
 export default function StaffOrderDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
+
+  const orderId: number | undefined = location.state?.orderId
+  const tableId: number | undefined = location.state?.tableId
+  const noteFromState = location.state?.note as string | undefined
+  const cartFromState = location.state?.cart as { name: string; qty: number; price: number }[] | undefined
+
+  const initialItems: OrderItem[] = (cartFromState ?? []).map((item) => ({
+    name: item.name,
+    qty: item.qty,
+    price: item.price,
+    total: item.price * item.qty,
+    status: "cooking" as const,
+  }))
+
   const [kitchenDone, setKitchenDone] = useState(false)
   const [served, setServed] = useState(false)
+  const [orderItems, setOrderItems] = useState<OrderItem[]>(initialItems)
+  const [tableNumber, setTableNumber] = useState<number | undefined>(location.state?.tableNumber)
+  const [tableCapacity, setTableCapacity] = useState<number | undefined>(location.state?.tableCapacity)
+  const [loading, setLoading] = useState(!!orderId)
 
-  const cartFromState = location.state?.cart as CartItem[] | undefined
-  const noteFromState = location.state?.note as string | undefined
-  const tableNumber: number | undefined = location.state?.tableNumber
-  const tableCapacity: number | undefined = location.state?.tableCapacity
-
-  const orderItems: OrderItem[] = cartFromState
-    ? cartFromState.map((item) => ({
-      name: item.name,
-      qty: item.qty,
-      price: item.price,
-      total: item.price * item.qty,
-      status: "cooking" as const,
-    }))
-    : []
+  useEffect(() => {
+    if (!orderId) return
+    api.get(`/orders/${orderId}`)
+      .then((res) => {
+        const data = res.data.data
+        const items: OrderItem[] = (data.items ?? []).map((item: {
+          menuItem?: { name?: string; price?: number }
+          quantity: number
+          unitPrice: number
+          totalPrice: number
+        }) => ({
+          name: item.menuItem?.name ?? "Món ăn",
+          qty: item.quantity,
+          price: item.unitPrice,
+          total: item.totalPrice,
+          status: "cooking" as const,
+        }))
+        setOrderItems(items)
+        if (data.table) {
+          setTableNumber(data.table.tableNumber)
+          setTableCapacity(data.table.capacity)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [orderId])
 
   const kitchenStatus = orderItems.map((item) => ({
     name: `${item.name} × ${item.qty}`,
@@ -65,8 +89,10 @@ export default function StaffOrderDetailPage() {
     { label: "Mã order", value: "#ORD-" + now.getFullYear() + String(now.getMonth() + 1).padStart(2, "0") + String(now.getDate()).padStart(2, "0") + "-" + String(now.getTime()).slice(-3) },
     { label: "Bàn số", value: tableLabel },
     { label: "Bắt đầu lúc", value: now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) },
-    { label: "Số món", value: `${orderItems.length} món` },
+    { label: "Số món", value: loading ? "..." : `${orderItems.length} món` },
   ]
+
+  const addMoreState = { tableNumber, capacity: tableCapacity, tableId, orderId, addItemsToExisting: true }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -75,7 +101,7 @@ export default function StaffOrderDetailPage() {
         <div className="flex items-center gap-3">
           <Link
             to="/staff/order"
-            state={{ cart: cartFromState, note: noteFromState, tableNumber, tableCapacity }}
+            state={addMoreState}
             className="text-white/80 text-[13px] hover:text-white transition-colors"
           >
             ← Gọi món
@@ -146,54 +172,58 @@ export default function StaffOrderDetailPage() {
               <div className="flex items-center justify-between text-[15px] font-bold mb-4">
                 <span>🍽️ Danh sách món</span>
                 <button
-                  onClick={() => navigate("/staff/order", { state: { cart: cartFromState, note: noteFromState, tableNumber, tableCapacity } })}
+                  onClick={() => navigate("/staff/order", { state: addMoreState })}
                   className="px-3 py-1.5 border-[1.5px] border-gray-200 rounded-lg text-xs font-semibold bg-white hover:bg-gray-50"
                 >
                   + Thêm món
                 </button>
               </div>
 
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-3 py-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-gray-200 text-left">Món Ăn</th>
-                    <th className="px-3 py-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-gray-200 text-center">SL</th>
-                    <th className="px-3 py-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-gray-200 text-right">Đơn giá</th>
-                    <th className="px-3 py-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-gray-200 text-right">Thành tiền</th>
-                    <th className="px-3 py-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-gray-200 text-left">Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orderItems.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-3 py-3 border-b border-gray-100">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">🍽️</span>
-                          <div className="text-sm font-semibold">{item.name}</div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-center font-bold border-b border-gray-100">× {item.qty}</td>
-                      <td className="px-3 py-3 text-right text-sm border-b border-gray-100">
-                        {item.price.toLocaleString("vi-VN")}đ
-                      </td>
-                      <td className="px-3 py-3 text-right font-bold border-b border-gray-100">
-                        {item.total.toLocaleString("vi-VN")}đ
-                      </td>
-                      <td className="px-3 py-3 border-b border-gray-100">
-                        {kitchenDone || item.status === "done" ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                            ✓ Đã lên
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
-                            ⏳ Đang làm
-                          </span>
-                        )}
-                      </td>
+              {loading ? (
+                <div className="text-center py-6 text-gray-400 text-sm">Đang tải...</div>
+              ) : (
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-gray-200 text-left">Món Ăn</th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-gray-200 text-center">SL</th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-gray-200 text-right">Đơn giá</th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-gray-200 text-right">Thành tiền</th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-gray-200 text-left">Trạng thái</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {orderItems.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="px-3 py-3 border-b border-gray-100">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">🍽️</span>
+                            <div className="text-sm font-semibold">{item.name}</div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-center font-bold border-b border-gray-100">× {item.qty}</td>
+                        <td className="px-3 py-3 text-right text-sm border-b border-gray-100">
+                          {item.price.toLocaleString("vi-VN")}đ
+                        </td>
+                        <td className="px-3 py-3 text-right font-bold border-b border-gray-100">
+                          {item.total.toLocaleString("vi-VN")}đ
+                        </td>
+                        <td className="px-3 py-3 border-b border-gray-100">
+                          {kitchenDone || item.status === "done" ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                              ✓ Đã lên
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
+                              ⏳ Đang làm
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             {/* Customer Note */}
@@ -239,14 +269,14 @@ export default function StaffOrderDetailPage() {
                 <span className="text-xl font-bold text-blue-600">{TOTAL.toLocaleString("vi-VN")}đ</span>
               </div>
               <button
-                onClick={() => navigate("/staff/payment", { state: { orderItems, tableNumber, tableCapacity, orderId: location.state?.orderId, tableId: location.state?.tableId } })}
+                onClick={() => navigate("/staff/payment", { state: { orderItems, tableNumber, tableCapacity, orderId, tableId } })}
                 className="w-full mt-3.5 py-3.5 bg-emerald-500 text-white rounded-lg text-[15px] font-bold hover:bg-emerald-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!kitchenDone || !served}
               >
                 💳 Thanh toán ngay
               </button>
               <button
-                onClick={() => navigate("/staff/order", { state: { cart: cartFromState, note: noteFromState, tableNumber, tableCapacity } })}
+                onClick={() => navigate("/staff/order", { state: addMoreState })}
                 className="w-full mt-1.5 py-2.5 bg-blue-50 text-blue-600 border-[1.5px] border-blue-200 rounded-lg text-sm font-semibold hover:bg-blue-100 transition"
               >
                 + Thêm món

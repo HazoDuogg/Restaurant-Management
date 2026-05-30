@@ -48,7 +48,7 @@ export class OrderService {
 
         const order = await this.orderRepo.findById(orderId);
         if (!order) throw new Error(`Order với ID ${orderId} không tồn tại`);
-        if (order.status !== OrderStatus.PENDING) throw new Error('Chỉ có thể thêm món cho order đang chờ');
+        if (order.status !== OrderStatus.PENDING && order.status !== OrderStatus.CONFIRMED) throw new Error('Không thể thêm món cho order này');
 
         const menuItem = await this.menuItemRepo.findById(menuItemId);
         if (!menuItem) throw new Error(`Món ăn với ID ${menuItemId} không tồn tại`);
@@ -69,6 +69,7 @@ export class OrderService {
     async confirm(id: number): Promise<void> {
         const order = await this.orderRepo.findById(id);
         if (!order) throw new Error(`Order với ID ${id} không tồn tại`);
+        if (order.status === OrderStatus.CONFIRMED) return;
         if (order.status !== OrderStatus.PENDING) throw new Error('Chỉ có thể xác nhận order đang chờ');
         if (order.items.length === 0) throw new Error('Order chưa có món ăn nào');
         await this.orderRepo.updateStatus(id, OrderStatus.CONFIRMED);

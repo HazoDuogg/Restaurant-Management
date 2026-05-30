@@ -51,7 +51,7 @@ export class TableService {
     async delete(id: number): Promise<void> {
         const existing = await this.tableRepo.findById(id);
         if (!existing) throw new Error(`Bàn với ID ${id} không tồn tại`);
-        if (existing.status === TableStatus.OCCUPIED) throw new Error('Không thể xóa bàn đang có khách');
+        if (existing.status === TableStatus.OCCUPIED || existing.status === TableStatus.RESERVED) throw new Error('Không thể xóa bàn đang có khách hoặc đã được đặt');
         await this.tableRepo.delete(id);
     }
 

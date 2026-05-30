@@ -69,8 +69,8 @@ export default function AdminTablesPage() {
     setRefreshKey(k => k + 1);
   };
 
-  const normalTables = tables.filter(t => t.type === "NORMAL");
-  const vipTables = tables.filter(t => t.type === "VIP");
+  const normalTables = tables.filter(t => t.type === "NORMAL").sort((a, b) => a.tableNumber - b.tableNumber);
+  const vipTables = tables.filter(t => t.type === "VIP").sort((a, b) => a.tableNumber - b.tableNumber);
   const total = tables.length;
   const available = tables.filter(t => t.status === "AVAILABLE").length;
   const occupied = tables.filter(t => t.status === "OCCUPIED").length;

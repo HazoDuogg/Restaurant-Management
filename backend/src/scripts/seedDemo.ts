@@ -27,7 +27,7 @@ async function seedDemo() {
         create: {
             name: 'Nguyễn Nhất Khang',
             email: 'staff@vietbep.vn',
-            phone: '0901234567',
+            phone: '0909000001',
             password: staffPassword,
             role_id: staffRole.id,
             status: 'ACTIVE',
