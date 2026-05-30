@@ -26,7 +26,7 @@ export class InvoiceService {
         return invoice;
     }
 
-    async generateFromOrder(orderId: number, taxRate: number = 0, discount: number = 0): Promise<void> {
+    async generateFromOrder(orderId: number, taxRate: number = 0, discount: number = 0): Promise<number> {
         const order = await this.orderRepo.findById(orderId);
         if (!order) throw new Error(`Order với ID ${orderId} không tồn tại`);
         if (order.status !== OrderStatus.COMPLETED) throw new Error('Chỉ tạo hóa đơn cho order đã hoàn thành');
@@ -51,6 +51,8 @@ export class InvoiceService {
                 created.id
             );
         }
+
+        return created.id;
     }
 
     async markAsPaid(id: number): Promise<void> {

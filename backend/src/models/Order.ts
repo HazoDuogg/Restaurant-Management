@@ -117,4 +117,17 @@ export default class Order {
         this._status = status;
     }
 
+    public toJSON() {
+        return {
+            id: this._id,
+            orderTime: this._orderTime,
+            status: this._status,
+            totalAmount: this._totalAmount,
+            customer: this._customer,
+            staff: this._staff,
+            table: this._table,
+            items: this._items,
+        };
+    }
+
 }

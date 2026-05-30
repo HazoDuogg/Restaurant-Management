@@ -1,3 +1,4 @@
+import type { AccountStatus } from './enums.js';
 import Role from './Role.js';
 
 export default abstract class Accout {
@@ -7,6 +8,7 @@ export default abstract class Accout {
     protected _phone: string | null;
     protected _email: string | null;
     protected _password: string;
+    protected _accountStatus: AccountStatus;
     protected _role: Role | null;
 
     constructor(
@@ -15,6 +17,7 @@ export default abstract class Accout {
         password: string,
         phone: string | null = null,
         email: string | null = null,
+        accountStatus: AccountStatus,
         role: Role | null = null
     ) {
         this._id = id;
@@ -22,6 +25,7 @@ export default abstract class Accout {
         this._password = password;
         this._phone = phone;
         this._email = email;
+        this._accountStatus = accountStatus;
         this._role = role;
     }
 
@@ -65,6 +69,14 @@ export default abstract class Accout {
         this._password = value;
     }
 
+    public get accountStatus(): AccountStatus {
+        return this._accountStatus;
+    }
+
+    public set accountStatus(value: AccountStatus) {
+        this._accountStatus = value;
+    }
+
     public get role(): Role | null {
         return this._role;
     }
@@ -87,6 +99,17 @@ export default abstract class Accout {
         this._name = name;
         this._phone = phone;
         this._email = email;
+    }
+
+    public toJSON() {
+        return {
+            id: this._id,
+            name: this._name,
+            phone: this._phone,
+            email: this._email,
+            status: this._accountStatus,
+            role: this._role,
+        };
     }
 
 }
