@@ -7,15 +7,15 @@ export default class AuthController {
 
     async login(req: Request, res: Response): Promise<void> {
         try {
-            const { username, password } = req.body;
-            if (!username || !password) {
+            const { email, password } = req.body;
+            if (!email || !password) {
                 res.status(400).json({
                     success: false,
-                    message: "Vui lòng nhập username và password"
+                    message: "Vui lòng nhập email và mật khẩu"
                 });
                 return;
             }
-            const result = await authService.login(username, password);
+            const result = await authService.login(email, password);
             res.status(200).json({
                 success: true,
                 message: "Đăng nhập thành công!!",
@@ -31,15 +31,15 @@ export default class AuthController {
 
     async register(req: Request, res: Response): Promise<void> {
         try {
-            const { name, username, password, phone, email } = req.body;
-            if (!name || !username || !password) {
+            const { name, password, phone, email } = req.body;
+            if (!name || !email || !password) {
                 res.status(400).json({
                     success: false,
                     message: 'Vui lòng nhập đầy đủ thông tin'
                 });
                 return;
             }
-            await authService.register(name, username, password, phone, email);
+            await authService.register(name, password, phone ?? null, email);
             res.status(201).json({
                 success: true,
                 message: 'Đăng ký thành công'

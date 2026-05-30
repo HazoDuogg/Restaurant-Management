@@ -8,34 +8,23 @@ export default class AccountRepository {
 
     async findAll(): Promise<(Customer | Admin | Staff)[]> {
         try {
-            const account = await prisma.account.findMany({
-                include: {
-                    role: true,
-                    admin: true,
-                    staff: true,
-                    customer: true
-                }
+            const accounts = await prisma.account.findMany({
+                include: { role: true, admin: true, staff: true, customer: true }
             });
-            return account.map((a: any) => {
+            return accounts.map((a: any) => {
                 const role = a.role ? new Role(a.role.id, a.role.name, null) : null;
                 if (a.admin) {
-                    return new Admin(
-                        a.id, a.name, a.username, a.password,
-                        a.phone, a.email, role
-                    );
+                    return new Admin(a.id, a.name, a.password, a.phone, a.email, role);
                 } else if (a.staff) {
                     return new Staff(
-                        a.id, a.name, a.username, a.password,
-                        a.staff.staff_code ?? '',
-                        a.staff.position ?? '',
-                        a.staff.start_date,
+                        a.id, a.name, a.password,
+                        a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
                         a.phone, a.email, role
                     );
                 } else {
                     return new Customer(
-                        a.id, a.name, a.username, a.password,
-                        a.customer.customer_code ?? '',
-                        a.phone, a.email, role
+                        a.id, a.name, a.password,
+                        a.customer?.customer_code ?? '', a.phone, a.email, role
                     );
                 }
             });
@@ -46,36 +35,24 @@ export default class AccountRepository {
 
     async findById(id: number): Promise<Customer | Admin | Staff | null> {
         try {
-            const account = await prisma.account.findUnique({
+            const a = await prisma.account.findUnique({
                 where: { id },
-                include: {
-                    role: true,
-                    admin: true,
-                    staff: true,
-                    customer: true
-                }
-            })
-            if (!account)
-                return null;
-            const role = account.role ? new Role(account.role.id, account.role.name, null) : null;
-            if (account.admin) {
-                return new Admin(
-                    account.id, account.name, account.username, account.password,
-                    account.phone, account.email, role
-                );
-            } else if (account.staff) {
+                include: { role: true, admin: true, staff: true, customer: true }
+            });
+            if (!a) return null;
+            const role = a.role ? new Role(a.role.id, a.role.name, null) : null;
+            if (a.admin) {
+                return new Admin(a.id, a.name, a.password, a.phone, a.email, role);
+            } else if (a.staff) {
                 return new Staff(
-                    account.id, account.name, account.username, account.password,
-                    account.staff.staff_code ?? '',
-                    account.staff.position ?? '',
-                    account.staff.start_date,
-                    account.phone, account.email, role
+                    a.id, a.name, a.password,
+                    a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
+                    a.phone, a.email, role
                 );
             } else {
                 return new Customer(
-                    account.id, account.name, account.username, account.password,
-                    account.customer?.customer_code ?? '',
-                    account.phone, account.email, role
+                    a.id, a.name, a.password,
+                    a.customer?.customer_code ?? '', a.phone, a.email, role
                 );
             }
         } catch (error) {
@@ -83,42 +60,30 @@ export default class AccountRepository {
         }
     }
 
-    async findByUsername(username: string): Promise<Customer | Admin | Staff | null> {
+    async findByEmail(email: string): Promise<Customer | Admin | Staff | null> {
         try {
-            const account = await prisma.account.findUnique({
-                where: { username },
-                include: {
-                    role: true,
-                    admin: true,
-                    staff: true,
-                    customer: true
-                }
+            const a = await prisma.account.findFirst({
+                where: { email },
+                include: { role: true, admin: true, staff: true, customer: true }
             });
-            if (!account)
-                return null;
-            const role = account.role ? new Role(account.role.id, account.role.name, null) : null;
-            if (account.admin) {
-                return new Admin(
-                    account.id, account.name, account.username, account.password,
-                    account.phone, account.email, role
-                );
-            } else if (account.staff) {
+            if (!a) return null;
+            const role = a.role ? new Role(a.role.id, a.role.name, null) : null;
+            if (a.admin) {
+                return new Admin(a.id, a.name, a.password, a.phone, a.email, role);
+            } else if (a.staff) {
                 return new Staff(
-                    account.id, account.name, account.username, account.password,
-                    account.staff.staff_code ?? '',
-                    account.staff.position ?? '',
-                    account.staff.start_date,
-                    account.phone, account.email, role
+                    a.id, a.name, a.password,
+                    a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
+                    a.phone, a.email, role
                 );
             } else {
                 return new Customer(
-                    account.id, account.name, account.username, account.password,
-                    account.customer?.customer_code ?? '',
-                    account.phone, account.email, role
+                    a.id, a.name, a.password,
+                    a.customer?.customer_code ?? '', a.phone, a.email, role
                 );
             }
         } catch (error) {
-            throw new Error(`Không tìm thấy tài khoản với username "${username}": ${error}`);
+            throw new Error(`Không tìm thấy tài khoản với email "${email}": ${error}`);
         }
     }
 
@@ -126,17 +91,16 @@ export default class AccountRepository {
         try {
             await prisma.account.create({
                 data: {
-                    username: account.username,
                     password: account.password,
                     name: account.name,
                     phone: account.phone,
-                    email: account.email,
+                    email: account.email ?? "",
                     role_id: account.role?.id ?? null,
                     status: 'ACTIVE'
                 }
             });
         } catch (error) {
-            throw new Error(`Không thể tạo tài khoản "${account.username}": ${error}`);
+            throw new Error(`Không thể tạo tài khoản: ${error}`);
         }
     }
 
@@ -144,11 +108,7 @@ export default class AccountRepository {
         try {
             await prisma.account.update({
                 where: { id },
-                data: {
-                    name: account.name,
-                    phone: account.phone,
-                    email: account.email,
-                }
+                data: { name: account.name, phone: account.phone, email: account.email ?? "" }
             });
         } catch (error) {
             throw new Error(`Không thể cập nhật tài khoản với ID ${id}: ${error}`);
@@ -157,9 +117,7 @@ export default class AccountRepository {
 
     async deleteAccount(id: number): Promise<void> {
         try {
-            await prisma.account.delete({
-                where: { id }
-            });
+            await prisma.account.delete({ where: { id } });
         } catch (error) {
             throw new Error(`Không thể xóa tài khoản với ID ${id}. Tài khoản có thể đang được sử dụng: ${error}`);
         }
@@ -167,12 +125,7 @@ export default class AccountRepository {
 
     async updateStatus(id: number, status: string): Promise<void> {
         try {
-            await prisma.account.update({
-                where: { id },
-                data: {
-                    status: status
-                }
-            });
+            await prisma.account.update({ where: { id }, data: { status } });
         } catch (error) {
             throw new Error(`Không thể cập nhật trạng thái tài khoản với ID ${id}: ${error}`);
         }
@@ -180,10 +133,7 @@ export default class AccountRepository {
 
     async updatePassword(id: number, newPassword: string): Promise<void> {
         try {
-            await prisma.account.update({
-                where: { id },
-                data: { password: newPassword }
-            });
+            await prisma.account.update({ where: { id }, data: { password: newPassword } });
         } catch (error) {
             throw new Error(`Không thể đổi mật khẩu tài khoản với ID ${id}: ${error}`);
         }

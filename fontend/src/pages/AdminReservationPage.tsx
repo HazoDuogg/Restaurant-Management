@@ -43,7 +43,7 @@ export default function AdminReservationsPage() {
             {/* SIDEBAR */}
             <aside className="w-60 bg-white border-r border-gray-200 fixed top-0 left-0 bottom-0 flex flex-col z-50">
                 <div className="px-5 py-5 border-b border-gray-200">
-                    <div className="font-serif text-xl font-bold text-blue-600">🍜 Việt Bếp</div>
+                    <div className="font-sans text-xl font-bold text-blue-600">🍜 Việt Bếp</div>
                     <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Admin Panel</div>
                 </div>
                 <nav className="flex-1 py-3 overflow-y-auto">

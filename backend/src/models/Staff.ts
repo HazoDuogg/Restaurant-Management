@@ -10,7 +10,6 @@ export default class Staff extends Account {
     constructor(
         id: number,
         name: string,
-        username: string,
         password: string,
         staffId: string,
         position: string,
@@ -19,7 +18,7 @@ export default class Staff extends Account {
         email: string | null = null,
         role: Role | null = null
     ) {
-        super(id, name, username, password, phone, email, role);
+        super(id, name, password, phone, email, role);
         this._staffId = staffId;
         this._position = position;
         this._startDate = startDate;

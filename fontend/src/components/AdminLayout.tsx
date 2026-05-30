@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom"
-import type { ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useAuthStore } from "../state/auth"
 
 const navSections = [
   {
@@ -29,6 +30,20 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children, title, topbarRight }: AdminLayoutProps) {
   const location = useLocation()
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const logout = useAuthStore((e) => e.logout);
+  const user = useAuthStore((e) => e.user);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -52,8 +67,8 @@ export default function AdminLayout({ children, title, topbarRight }: AdminLayou
                     key={item.href}
                     to={item.href}
                     className={`flex items-center gap-2.5 py-2.5 px-4 mx-2 rounded-lg text-sm font-medium transition-all my-px ${isActive
-                        ? "bg-blue-50 text-blue-600 font-semibold"
-                        : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                      ? "bg-blue-50 text-blue-600 font-semibold"
+                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
                       }`}
                   >
                     <span className="w-[18px] text-center text-base">{item.icon}</span>
@@ -70,15 +85,39 @@ export default function AdminLayout({ children, title, topbarRight }: AdminLayou
           ))}
         </nav>
 
-        <div className="px-4 py-4 border-t border-gray-200">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-              A
-            </div>
-            <div>
-              <div className="text-sm font-semibold">Admin Chính</div>
-              <div className="text-[11px] text-gray-400">Quản trị viên</div>
-            </div>
+        <div className="px-3 py-3 border-t border-gray-200">
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setShowDropdown(v => !v)}
+              className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer border-none bg-transparent"
+            >
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                {user?.name?.[0]?.toUpperCase() ?? "A"}
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-sm font-semibold text-gray-800 truncate">{user?.name ?? "Admin"}</p>
+                <p className="text-xs text-gray-400 capitalize">{user?.role ?? "admin"}</p>
+              </div>
+              <svg
+                className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${showDropdown ? "rotate-180" : ""}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showDropdown && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
+                <button
+                  onClick={() => {
+                    logout();
+                    setShowDropdown(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </aside>

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAuthStore } from "../state/auth";
+import { Link } from "react-router-dom";
 
 const timeSlots = [
     { time: "10:30", available: false },
@@ -34,12 +36,26 @@ export default function CustomerReservationPage() {
     const [selectedTable, setSelectedTable] = useState(3);
     const [guestCount, setGuestCount] = useState(4);
     const [note, setNote] = useState("Sinh nhật bé gái, có thể chuẩn bị bánh nhỏ giúp không ạ?");
+    const [showDropdown, setShowDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const user = useAuthStore((e) => e.user);
+    const logout = useAuthStore((e) => e.logout);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
 
     return (
         <div className="min-h-screen bg-gray-50">
             {/* TOPBAR */}
             <div className="bg-white border-b border-gray-200 px-8 h-15 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-                <div className="font-serif text-xl font-bold text-blue-600">🍜 Việt Bếp</div>
+                <div className="font-sans text-xl font-bold text-blue-600">🍜 Việt Bếp</div>
                 <div className="flex gap-2">
                     {[
                         { label: "Trang chủ", href: "/" },
@@ -51,9 +67,37 @@ export default function CustomerReservationPage() {
                         </a>
                     ))}
                 </div>
-                <div className="flex items-center gap-2.5 text-sm font-medium">
-                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">L</div>
-                    <span>Nguyễn Thị Lan</span>
+                <div className="relative" ref={dropdownRef}>
+                    <button
+                        onClick={() => setShowDropdown(v => !v)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer border-none bg-transparent"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {user ? user.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <span className="text-sm font-medium text-gray-800">{user ? user.name : 'U'}</span>
+                    </button>
+                    {showDropdown && (
+                        <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
+                            <button
+                                onClick={() => {
+                                    logout();
+                                    setShowDropdown(false);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
+                            >
+                                Đăng xuất
+                            </button>
+
+                            <Link
+                                to="/customer-history"
+                                onClick={() => setShowDropdown(false)}
+                                className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                                Lịch sử
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -177,7 +221,7 @@ export default function CustomerReservationPage() {
                         { label: "Giờ", value: selectedTime },
                         { label: "Số người", value: `${guestCount} người` },
                         { label: "Bàn", value: `Bàn ${String(selectedTable).padStart(2, "0")} (${tables.find(t => t.id === selectedTable)?.capacity} người)` },
-                        { label: "Khách hàng", value: "Nguyễn Thị Lan" },
+                        { label: "Khách hàng", value: user?.name ?? "Khách hàng" },
                     ].map((row) => (
                         <div key={row.label} className="flex justify-between items-center text-sm mb-2.5">
                             <span className="text-gray-500">{row.label}</span>
@@ -185,7 +229,7 @@ export default function CustomerReservationPage() {
                         </div>
                     ))}
                     <div className="mt-3 pt-3 border-t border-blue-200 text-xs text-blue-700 leading-relaxed">
-                        ✉️ Xác nhận sẽ gửi đến <strong>lan.nguyen@email.com</strong> trong vòng 5 phút.<br />
+                        ✉️ Xác nhận sẽ được gửi đến bạn trong vòng 5 phút.<br />
                         ⚠️ Vui lòng đến đúng giờ. Hủy miễn phí trước 2 giờ so với giờ đặt.
                     </div>
                 </div>

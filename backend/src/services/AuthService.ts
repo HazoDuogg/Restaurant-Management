@@ -9,9 +9,9 @@ export class AuthService {
     private accountRepo = new AccountRepository();
     private customerRepo = new CustomerRepository();
 
-    async login(username: string, password: string): Promise<{ token: string, role: string }> {
+    async login(email: string, password: string): Promise<{ accessToken: string, user: { id: number, role: string, name: string } }> {
         try {
-            const account = await this.accountRepo.findByUsername(username);
+            const account = await this.accountRepo.findByEmail(email);
             if (!account) {
                 throw new Error('Tài khoản không tồn tại');
             }
@@ -20,24 +20,24 @@ export class AuthService {
                 throw new Error('Mật khẩu không đúng. Vui lòng nhập lại!!');
             }
             const role = account.role?.roleName ?? 'CUSTOMER';
-            const token = issueAccessToken(account.id, role);
+            const accessToken = issueAccessToken(account.id, role);
             return {
-                token,
-                role
+                accessToken,
+                user: { id: account.id, role, name: account.name }
             }
         } catch (error) {
             throw new Error(`Đăng nhập thất bại: ${error}`)
         }
     }
 
-    async register(name: string, username: string, password: string, phone: string | null, email: string | null): Promise<void> {
+    async register(name: string, password: string, phone: string | null, email: string): Promise<void> {
         try {
-            const accout = await this.accountRepo.findByUsername(username);
-            if (accout) {
-                throw new Error('Tài khoản đã tồn tại');
+            const existing = await this.accountRepo.findByEmail(email);
+            if (existing) {
+                throw new Error('Email đã được sử dụng');
             }
             const hashPass = await bcrypt.hash(password, 10);
-            const customer = new Customer(0, name, username, hashPass, `CUS${Date.now()}`, phone, email, null);
+            const customer = new Customer(0, name, hashPass, `CUS${Date.now()}`, phone, email, null);
             await this.accountRepo.createAccount(customer);
             await this.customerRepo.createCustomer(customer);
         } catch (error) {

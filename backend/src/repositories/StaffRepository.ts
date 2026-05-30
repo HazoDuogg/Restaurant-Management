@@ -12,7 +12,7 @@ export default class StaffRepository {
             return staff.map((s) => {
                 const role = s.account.role ? new Role(s.account.role.id, s.account.role.name, null) : null;
                 return new Staff(
-                    s.account_id, s.account.name, s.account.username,
+                    s.account_id, s.account.name,
                     s.account.password, s.staff_code ?? '', s.position ?? '',
                     s.start_date, s.account.phone, s.account.email, role
                 );
@@ -37,7 +37,6 @@ export default class StaffRepository {
             return new Staff(
                 s.account_id,
                 s.account.name,
-                s.account.username,
                 s.account.password,
                 s.staff_code ?? '',
                 s.position ?? '',

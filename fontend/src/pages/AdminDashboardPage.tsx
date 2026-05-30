@@ -1,3 +1,4 @@
+import { useState } from "react"
 import AdminLayout from "../components/AdminLayout"
 
 const statCards = [
@@ -39,8 +40,132 @@ const pendingReservations = [
 
 const MAX_BAR_PX = 150
 
+const today = new Date().toISOString().slice(0, 10)
+const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
+
 export default function AdminDashboardPage() {
+  const [showModal, setShowModal] = useState(false)
+  const [form, setForm] = useState({ from_date: firstOfMonth, to_date: today, total_revenue: "" })
+  const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from_date: form.from_date,
+          to_date: form.to_date,
+          total_revenue: form.total_revenue ? parseFloat(form.total_revenue) : null,
+        }),
+      })
+      setSuccess(true)
+      setTimeout(() => {
+        setShowModal(false)
+        setSuccess(false)
+        setForm({ from_date: firstOfMonth, to_date: today, total_revenue: "" })
+      }, 1200)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
+    <>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7">
+            <div className="flex items-center justify-between mb-5">
+              <div className="text-[17px] font-bold">Tạo báo cáo mới</div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-700 text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {success ? (
+              <div className="flex flex-col items-center py-6 gap-3">
+                <div className="text-4xl">✅</div>
+                <div className="text-[15px] font-semibold text-emerald-600">Tạo báo cáo thành công!</div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-600 mb-1.5">
+                    Từ ngày <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="from_date"
+                    value={form.from_date}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-[13px] outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-600 mb-1.5">
+                    Đến ngày <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="to_date"
+                    value={form.to_date}
+                    onChange={handleChange}
+                    required
+                    min={form.from_date}
+                    className="w-full px-3 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-[13px] outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-semibold text-gray-600 mb-1.5">
+                    Tổng doanh thu (đ)
+                    <span className="text-gray-400 font-normal ml-1">– để trống nếu chưa tính</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="total_revenue"
+                    value={form.total_revenue}
+                    onChange={handleChange}
+                    min={0}
+                    placeholder="Ví dụ: 48500000"
+                    className="w-full px-3 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-[13px] outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-[13px] font-semibold text-gray-600 hover:bg-gray-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-[13px] font-semibold transition"
+                  >
+                    {submitting ? "Đang tạo..." : "Tạo báo cáo"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
     <AdminLayout
       title="🏠 Dashboard"
       topbarRight={
@@ -50,7 +175,10 @@ export default function AdminDashboardPage() {
             🔔
             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" />
           </button>
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[13px] font-semibold transition">
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[13px] font-semibold transition"
+          >
             + Tạo báo cáo
           </button>
         </>
@@ -250,5 +378,6 @@ export default function AdminDashboardPage() {
         </div>
       </div>
     </AdminLayout>
+    </>
   )
 }

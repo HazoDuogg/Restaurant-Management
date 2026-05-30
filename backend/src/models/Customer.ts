@@ -8,14 +8,13 @@ export default class Customer extends Accout {
     constructor(
         id: number,
         name: string,
-        username: string,
         password: string,
         customerId: string,
         phone: string | null = null,
         email: string | null = null,
         role: Role | null = null
     ) {
-        super(id, name, username, password, phone, email, role);
+        super(id, name, password, phone, email, role);
         this._customerId = customerId;
     }
 

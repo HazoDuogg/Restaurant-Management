@@ -13,7 +13,7 @@ export default class OrderRepository {
             o.customer.account_id, o.customer.account.name,
             o.customer.account.username, o.customer.account.password,
             o.customer.customer_code ?? '',
-            o.customer.account.phone, o.customer.account.email, null
+            o.customer.account.phone, o.customer.account.email
         ) : null
 
         const staff = o.staff?.account ? new Staff(
@@ -21,7 +21,7 @@ export default class OrderRepository {
             o.staff.account.username, o.staff.account.password,
             o.staff.staff_code ?? '', o.staff.position ?? '',
             o.staff.start_date,
-            o.staff.account.phone, o.staff.account.email, null
+            o.staff.account.phone, o.staff.account.email
         ) : null
 
         const table = o.table ? new Table(

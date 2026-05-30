@@ -1,9 +1,32 @@
 import { useState } from "react";
+import { z } from "zod";
+import { api } from "../lib/api";
+import { useAuthStore } from "../state/auth";
+import { useNavigate, Link } from "react-router-dom";
+
+const signInSchema = z.object({
+    email: z.email("Chưa nhập email hoặc số điện thoại"),
+    password: z.string().min(6, "Mật khẩu ít nhất 6 ký tự.")
+});
 
 export default function RegisterPage() {
+
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
-    const [password, setPassword] = useState("MyPassword123");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [email, setEmail] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const register = useAuthStore((s) => s.login);
+    const navigation = useNavigate();
+    const fullName = `${firstName} ${lastName}`.trim();
+    const [checked, setChecked] = useState({
+        terms: true
+    });
 
     const getStrength = (pwd: string) => {
         if (pwd.length < 6) return 1;
@@ -15,6 +38,47 @@ export default function RegisterPage() {
     const strength = getStrength(password);
     const strengthLabels = ["", "Yếu", "Trung bình", "Tốt", "Mạnh"];
     const strengthColors = ["", "bg-red-400", "bg-yellow-400", "bg-green-400", "bg-green-500"];
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+        if (password !== confirmPassword) {
+            setError("Mật khẩu xác nhận không khớp.");
+            setLoading(false);
+            return;
+        }
+        if (!checked.terms) {
+            setError("Bạn phải đồng ý với Điều khoản sử dụng để tiếp tục.");
+            setLoading(false);
+            return;
+        }
+        const result = signInSchema.safeParse({ email, password });
+        if (!result.success) {
+            setError(result.error.issues[0].message);
+            setLoading(false);
+            return;
+        }
+        try {
+            const res = await api.post('/auth/register', { name: fullName, password, phone, email });
+            const data = res.data;
+            register(data);
+            navigation('/');
+        } catch (error: unknown) {
+            if (
+                typeof error === 'object' &&
+                error !== null &&
+                'response' in error &&
+                typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string'
+            ) {
+                setError((error as { response: { data: { message: string } } }).response.data.message);
+            } else {
+                setError('Đăng ký thất bại. Vui lòng thử lại sau.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
 
     return (
         <div className="min-h-screen flex">
@@ -64,7 +128,7 @@ export default function RegisterPage() {
                         <h1 className="font-serif text-3xl font-bold mb-2">Tạo tài khoản mới</h1>
                         <p className="text-sm text-gray-500">
                             Đã có tài khoản?{" "}
-                            <a href="/login" className="text-blue-600 font-medium hover:underline">Đăng nhập ngay</a>
+                            <Link to="/login" className="text-blue-600 font-medium hover:underline">Đăng nhập ngay</Link>
                         </p>
                     </div>
 
@@ -84,21 +148,21 @@ export default function RegisterPage() {
                         <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label className="block text-sm font-semibold mb-1.5">Họ <span className="text-red-500">*</span></label>
-                                <input type="text" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="Nguyễn" defaultValue="Nguyễn" />
+                                <input onChange={(e) => setFirstName(e.target.value)} type="text" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="Nguyễn" />
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold mb-1.5">Tên <span className="text-red-500">*</span></label>
-                                <input type="text" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="Văn A" defaultValue="Thị Lan" />
+                                <input onChange={(e) => setLastName(e.target.value)} type="text" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="Văn A" />
                             </div>
                         </div>
                         <div className="mb-4">
                             <label className="block text-sm font-semibold mb-1.5">Số điện thoại <span className="text-red-500">*</span></label>
-                            <input type="tel" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="0901 234 567" defaultValue="0901 234 567" />
+                            <input onChange={(e) => setPhone(e.target.value)} type="tel" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="0901 234 567" defaultValue="0901 234 567" />
                             <p className="text-xs text-gray-400 mt-1.5">Dùng để xác nhận đặt bàn qua SMS</p>
                         </div>
                         <div>
                             <label className="block text-sm font-semibold mb-1.5">Email <span className="text-red-500">*</span></label>
-                            <input type="email" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="example@email.com" defaultValue="lan.nguyen@email.com" />
+                            <input onChange={(e) => setEmail(e.target.value)} type="email" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="example@email.com" defaultValue="lan.nguyen@email.com" />
                         </div>
                     </div>
 
@@ -135,7 +199,8 @@ export default function RegisterPage() {
                                     type={showConfirm ? "text" : "password"}
                                     className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition"
                                     placeholder="Nhập lại mật khẩu"
-                                    defaultValue="MyPassword123"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
                                 />
                                 <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" onClick={() => setShowConfirm(!showConfirm)}>
                                     {showConfirm ? "🙈" : "👁"}
@@ -147,7 +212,7 @@ export default function RegisterPage() {
                     {/* Checkboxes */}
                     <div className="mb-4">
                         <label className="flex items-start gap-2.5 cursor-pointer">
-                            <input type="checkbox" defaultChecked className="mt-0.5 accent-blue-600 flex-shrink-0" />
+                            <input type="checkbox" defaultChecked className="mt-0.5 accent-blue-600 flex-shrink-0" onChange={(e) => setChecked({ terms: e.target.checked })} />
                             <span className="text-sm text-gray-500 leading-relaxed">
                                 Tôi đồng ý với <a href="#" className="text-blue-600 hover:underline">Điều khoản sử dụng</a> và{" "}
                                 <a href="#" className="text-blue-600 hover:underline">Chính sách bảo mật</a> của Việt Bếp
@@ -163,8 +228,17 @@ export default function RegisterPage() {
                         </label>
                     </div>
 
-                    <button className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-base font-semibold transition">
-                        Tạo tài khoản
+                    {error && (
+                        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-300 rounded-lg text-sm text-red-700">
+                            {error}
+                        </div>
+                    )}
+
+                    <button className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-base font-semibold transition"
+                        onClick={handleSubmit}
+                        disabled={loading}
+                    >
+                        {loading ? "Đang tạo..." : "Tạo tài khoản"}
                     </button>
 
                     <p className="text-center mt-5 text-xs text-gray-400">
