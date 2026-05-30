@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { z } from "zod";
 import { api } from "../lib/api";
-import { useAuthStore } from "../state/auth";
 import { useNavigate, Link } from "react-router-dom";
 
 const signInSchema = z.object({
@@ -21,7 +20,6 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const register = useAuthStore((s) => s.login);
     const navigation = useNavigate();
     const fullName = `${firstName} ${lastName}`.trim();
     const [checked, setChecked] = useState({
@@ -60,9 +58,7 @@ export default function RegisterPage() {
             return;
         }
         try {
-            const res = await api.post('/auth/register', { name: fullName, password, phone, email });
-            const data = res.data;
-            register(data);
+            await api.post('/auth/register', { name: fullName, password, phone, email });
             navigation('/');
         } catch (error: unknown) {
             if (
