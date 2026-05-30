@@ -84,4 +84,15 @@ export class MenuItem {
         this._status = status;
     }
 
+    public toJSON() {
+        return {
+            id: this._id,
+            name: this._name,
+            price: this._price,
+            description: this._description,
+            status: this._status,
+            category: this._category,
+        };
+    }
+
 }

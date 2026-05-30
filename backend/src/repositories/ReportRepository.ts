@@ -63,21 +63,6 @@ export default class ReportRepository {
         }
     }
 
-    async update(id: number, report: Report): Promise<void> {
-        try {
-            await prisma.report.update({
-                where: { id },
-                data: {
-                    from_date: report.fromDate,
-                    to_date: report.toDate,
-                    total_revenue: report.totalRevenue
-                }
-            })
-        } catch (error) {
-            throw new Error(`Không thể cập nhật báo cáo với ID ${id}: ${error}`)
-        }
-    }
-
     async delete(id: number): Promise<void> {
         try {
             await prisma.report.delete({

@@ -3,6 +3,11 @@ export enum MenuStatus {
     UNAVAILABLE = 'UNAVAILABLE'
 }
 
+export enum AccountStatus {
+    ACTIVE = 'ACTIVE',
+    LOOKED = 'LOOKED'
+}
+
 export enum OrderStatus {
     PENDING = 'PENDING',
     CONFIRMED = 'CONFIRMED',
@@ -40,4 +45,14 @@ export enum TableStatus {
     AVAILABLE = 'AVAILABLE',
     OCCUPIED = 'OCCUPIED',
     RESERVED = 'RESERVED'
+}
+
+export enum TableType {
+    NORMAL = 'NORMAL',
+    VIP = 'VIP'
+}
+
+export enum StaffStatus {
+    ACTIVE = 'ACTIVE',
+    ONLEAVE = 'ONLEAVE'
 }

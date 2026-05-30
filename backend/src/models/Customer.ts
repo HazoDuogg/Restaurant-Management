@@ -1,4 +1,5 @@
 import Accout from './Account.js';
+import type { AccountStatus } from './enums.js';
 import Role from './Role.js';
 
 export default class Customer extends Accout {
@@ -12,9 +13,10 @@ export default class Customer extends Accout {
         customerId: string,
         phone: string | null = null,
         email: string | null = null,
+        accountStatus: AccountStatus,
         role: Role | null = null
     ) {
-        super(id, name, password, phone, email, role);
+        super(id, name, password, phone, email, accountStatus, role);
         this._customerId = customerId;
     }
 
@@ -31,5 +33,12 @@ export default class Customer extends Accout {
     public makeReservation(reservationTime: Date, numberOfPeople: number): void { }
 
     public placeOrder(tableId: number): void { }
+
+    public override toJSON() {
+        return {
+            ...super.toJSON(),
+            customerId: this._customerId,
+        };
+    }
 
 }

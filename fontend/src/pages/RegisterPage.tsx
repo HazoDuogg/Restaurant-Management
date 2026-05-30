@@ -157,12 +157,12 @@ export default function RegisterPage() {
                         </div>
                         <div className="mb-4">
                             <label className="block text-sm font-semibold mb-1.5">Số điện thoại <span className="text-red-500">*</span></label>
-                            <input onChange={(e) => setPhone(e.target.value)} type="tel" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="0901 234 567" defaultValue="0901 234 567" />
+                            <input onChange={(e) => setPhone(e.target.value)} type="tel" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="0901 234 567" />
                             <p className="text-xs text-gray-400 mt-1.5">Dùng để xác nhận đặt bàn qua SMS</p>
                         </div>
                         <div>
                             <label className="block text-sm font-semibold mb-1.5">Email <span className="text-red-500">*</span></label>
-                            <input onChange={(e) => setEmail(e.target.value)} type="email" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="example@email.com" defaultValue="lan.nguyen@email.com" />
+                            <input onChange={(e) => setEmail(e.target.value)} type="email" className="w-full px-3.5 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition" placeholder="example@email.com" />
                         </div>
                     </div>
 

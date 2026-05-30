@@ -1,4 +1,5 @@
 import Accout from './Account.js';
+import type { AccountStatus } from './enums.js';
 import Role from './Role.js';
 
 export default class Admin extends Accout {
@@ -9,9 +10,10 @@ export default class Admin extends Accout {
         password: string,
         phone: string | null = null,
         email: string | null = null,
+        accountStatus: AccountStatus,
         role: Role | null = null
     ) {
-        super(id, name, password, phone, email, role);
+        super(id, name, password, phone, email, accountStatus, role);
     }
 
     public createStaffAccount(name: string, position: string, startDate: Date): void { }

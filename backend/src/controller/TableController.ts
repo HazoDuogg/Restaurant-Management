@@ -1,205 +1,104 @@
 import type { Request, Response } from "express";
 import { TableService } from "../services/TableService.js";
-import { TableStatus } from "../models/enums.js";
+import { TableStatus, TableType } from "../models/enums.js";
+
+const tableService = new TableService();
 
 export class TableController {
 
-    private tableService = new TableService();
-
-    // GET /api/tables
-    getAll = async (req: Request, res: Response): Promise<void> => {
+    async getAll(_req: Request, res: Response): Promise<void> {
         try {
-            const tables = await this.tableService.getAll();
-            res.status(200).json({
-                success: true,
-                data: tables
-            });
-        } catch (error: any) {
-            res.status(500).json({
-                success: false,
-                message: error.message || "Lỗi server"
-            });
+            const tables = await tableService.getAll();
+            res.status(200).json({ success: true, data: tables });
+        } catch (error) {
+            res.status(500).json({ success: false, message: `${error}` });
         }
-    };
+    }
 
-    // GET /api/tables/available
-    getAvailable = async (req: Request, res: Response): Promise<void> => {
+    async getById(req: Request, res: Response): Promise<void> {
         try {
-            const tables = await this.tableService.getAvailable();
-            res.status(200).json({
-                success: true,
-                data: tables
-            });
-        } catch (error: any) {
-            res.status(500).json({
-                success: false,
-                message: error.message || "Lỗi server"
-            });
+            const table = await tableService.getById(Number(req.params.id));
+            res.status(200).json({ success: true, data: table });
+        } catch (error) {
+            res.status(404).json({ success: false, message: `${error}` });
         }
-    };
+    }
 
-    // GET /api/tables/status/:status
-    getByStatus = async (req: Request, res: Response): Promise<void> => {
+    async getAvailable(_req: Request, res: Response): Promise<void> {
         try {
-            const status = req.params.status as TableStatus;
+            const tables = await tableService.getAvailable();
+            res.status(200).json({ success: true, data: tables });
+        } catch (error) {
+            res.status(500).json({ success: false, message: `${error}` });
+        }
+    }
 
-            if (!Object.values(TableStatus).includes(status)) {
-                res.status(400).json({
-                    success: false,
-                    message: `Trạng thái không hợp lệ. Các giá trị hợp lệ: ${Object.values(TableStatus).join(", ")}`
-                });
+    async getByStatus(req: Request, res: Response): Promise<void> {
+        try {
+            const { status } = req.params;
+            if (!Object.values(TableStatus).includes(status as TableStatus)) {
+                res.status(400).json({ success: false, message: "Trạng thái không hợp lệ" });
                 return;
             }
-
-            const tables = await this.tableService.getByStatus(status);
-            res.status(200).json({
-                success: true,
-                data: tables
-            });
-        } catch (error: any) {
-            res.status(500).json({
-                success: false,
-                message: error.message || "Lỗi server"
-            });
+            const tables = await tableService.getByStatus(status as TableStatus);
+            res.status(200).json({ success: true, data: tables });
+        } catch (error) {
+            res.status(500).json({ success: false, message: `${error}` });
         }
-    };
+    }
 
-    // GET /api/tables/:id
-    getById = async (req: Request, res: Response): Promise<void> => {
+    async create(req: Request, res: Response): Promise<void> {
         try {
-            const id = parseInt(req.params.id as string);
-            if (isNaN(id)) {
-                res.status(400).json({ success: false, message: "ID không hợp lệ" });
+            const { tableNumber, capacity, type } = req.body;
+            if (!tableNumber || !capacity) {
+                res.status(400).json({ success: false, message: "Số bàn và sức chứa không được để trống" });
                 return;
             }
-
-            const table = await this.tableService.getById(id);
-            res.status(200).json({
-                success: true,
-                data: table
-            });
-        } catch (error: any) {
-            const status = error.message.includes("không tồn tại") ? 404 : 500;
-            res.status(status).json({
-                success: false,
-                message: error.message
-            });
+            const tableType = Object.values(TableType).includes(type) ? type as TableType : TableType.NORMAL;
+            await tableService.create(Number(tableNumber), Number(capacity), tableType);
+            res.status(201).json({ success: true, message: "Tạo bàn thành công" });
+        } catch (error) {
+            res.status(400).json({ success: false, message: `${error}` });
         }
-    };
+    }
 
-    // POST /api/tables
-    create = async (req: Request, res: Response): Promise<void> => {
+    async update(req: Request, res: Response): Promise<void> {
         try {
+            const id = Number(req.params.id);
             const { tableNumber, capacity } = req.body;
-
-            if (tableNumber === undefined || capacity === undefined) {
-                res.status(400).json({
-                    success: false,
-                    message: "Thiếu thông tin: tableNumber và capacity là bắt buộc"
-                });
+            if (!tableNumber || !capacity) {
+                res.status(400).json({ success: false, message: "Số bàn và sức chứa không được để trống" });
                 return;
             }
-
-            await this.tableService.create(Number(tableNumber), Number(capacity));
-            res.status(201).json({
-                success: true,
-                message: "Tạo bàn thành công"
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
+            await tableService.update(id, Number(tableNumber), Number(capacity));
+            res.status(200).json({ success: true, message: "Cập nhật bàn thành công" });
+        } catch (error) {
+            res.status(400).json({ success: false, message: `${error}` });
         }
-    };
+    }
 
-    // PUT /api/tables/:id
-    update = async (req: Request, res: Response): Promise<void> => {
+    async updateStatus(req: Request, res: Response): Promise<void> {
         try {
-            const id = parseInt(req.params.id as string);
-            if (isNaN(id)) {
-                res.status(400).json({ success: false, message: "ID không hợp lệ" });
-                return;
-            }
-
-            const { tableNumber, capacity } = req.body;
-
-            if (tableNumber === undefined || capacity === undefined) {
-                res.status(400).json({
-                    success: false,
-                    message: "Thiếu thông tin: tableNumber và capacity là bắt buộc"
-                });
-                return;
-            }
-
-            await this.tableService.update(id, Number(tableNumber), Number(capacity));
-            res.status(200).json({
-                success: true,
-                message: "Cập nhật bàn thành công"
-            });
-        } catch (error: any) {
-            const status = error.message.includes("không tồn tại") ? 404 : 400;
-            res.status(status).json({
-                success: false,
-                message: error.message
-            });
-        }
-    };
-
-    // PATCH /api/tables/:id/status
-    updateStatus = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const id = parseInt(req.params.id as string);
-            if (isNaN(id)) {
-                res.status(400).json({ success: false, message: "ID không hợp lệ" });
-                return;
-            }
-
+            const id = Number(req.params.id);
             const { status } = req.body;
-
             if (!status || !Object.values(TableStatus).includes(status)) {
-                res.status(400).json({
-                    success: false,
-                    message: `Trạng thái không hợp lệ. Các giá trị hợp lệ: ${Object.values(TableStatus).join(", ")}`
-                });
+                res.status(400).json({ success: false, message: "Trạng thái không hợp lệ" });
                 return;
             }
-
-            await this.tableService.updateStatus(id, status as TableStatus);
-            res.status(200).json({
-                success: true,
-                message: "Cập nhật trạng thái bàn thành công"
-            });
-        } catch (error: any) {
-            const status = error.message.includes("không tồn tại") ? 404 : 400;
-            res.status(status).json({
-                success: false,
-                message: error.message
-            });
+            await tableService.updateStatus(id, status as TableStatus);
+            res.status(200).json({ success: true, message: "Cập nhật trạng thái bàn thành công" });
+        } catch (error) {
+            res.status(400).json({ success: false, message: `${error}` });
         }
-    };
+    }
 
-    // DELETE /api/tables/:id
-    delete = async (req: Request, res: Response): Promise<void> => {
+    async delete(req: Request, res: Response): Promise<void> {
         try {
-            const id = parseInt(req.params.id as string);
-            if (isNaN(id)) {
-                res.status(400).json({ success: false, message: "ID không hợp lệ" });
-                return;
-            }
-            await this.tableService.delete(id);
-            res.status(200).json({
-                success: true,
-                message: "Xóa bàn thành công"
-            });
-        } catch (error: any) {
-            const status = error.message.includes("không tồn tại") ? 404
-                : error.message.includes("đang có khách") ? 409
-                    : 500;
-            res.status(status).json({
-                success: false,
-                message: error.message
-            });
+            await tableService.delete(Number(req.params.id));
+            res.status(200).json({ success: true, message: "Xóa bàn thành công" });
+        } catch (error) {
+            res.status(400).json({ success: false, message: `${error}` });
         }
-    };
+    }
+
 }
