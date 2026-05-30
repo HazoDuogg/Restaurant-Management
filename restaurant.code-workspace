@@ -7,5 +7,7 @@
 			"path": "fontend"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "fontend"
+	}
 }

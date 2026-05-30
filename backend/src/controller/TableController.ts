@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { TableService } from "../services/TableService.js";
 import { TableStatus } from "../models/enums.js";
 
@@ -67,7 +67,7 @@ export class TableController {
     // GET /api/tables/:id
     getById = async (req: Request, res: Response): Promise<void> => {
         try {
-            const id = parseInt(req.params.id);
+            const id = parseInt(req.params.id as string);
             if (isNaN(id)) {
                 res.status(400).json({ success: false, message: "ID không hợp lệ" });
                 return;
@@ -116,7 +116,7 @@ export class TableController {
     // PUT /api/tables/:id
     update = async (req: Request, res: Response): Promise<void> => {
         try {
-            const id = parseInt(req.params.id);
+            const id = parseInt(req.params.id as string);
             if (isNaN(id)) {
                 res.status(400).json({ success: false, message: "ID không hợp lệ" });
                 return;
@@ -149,7 +149,7 @@ export class TableController {
     // PATCH /api/tables/:id/status
     updateStatus = async (req: Request, res: Response): Promise<void> => {
         try {
-            const id = parseInt(req.params.id);
+            const id = parseInt(req.params.id as string);
             if (isNaN(id)) {
                 res.status(400).json({ success: false, message: "ID không hợp lệ" });
                 return;
@@ -182,12 +182,11 @@ export class TableController {
     // DELETE /api/tables/:id
     delete = async (req: Request, res: Response): Promise<void> => {
         try {
-            const id = parseInt(req.params.id);
+            const id = parseInt(req.params.id as string);
             if (isNaN(id)) {
                 res.status(400).json({ success: false, message: "ID không hợp lệ" });
                 return;
             }
-
             await this.tableService.delete(id);
             res.status(200).json({
                 success: true,
