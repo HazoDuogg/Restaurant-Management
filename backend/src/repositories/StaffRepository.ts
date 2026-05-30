@@ -1,6 +1,8 @@
 import { prisma } from "../config/prisma.js"
 import Staff from "../models/Staff.js"
 import Role from "../models/Role.js"
+import type { AccountStatus } from "../models/enums.js";
+import { StaffStatus } from "../models/enums.js";
 
 export default class StaffRepository {
 
@@ -14,7 +16,10 @@ export default class StaffRepository {
                 return new Staff(
                     s.account_id, s.account.name,
                     s.account.password, s.staff_code ?? '', s.position ?? '',
-                    s.start_date, s.account.phone, s.account.email, role
+                    s.start_date, s.account.phone, s.account.email,
+                    s.account.status as AccountStatus,
+                    s.status_work as StaffStatus,
+                    role
                 );
             });
         } catch (error) {
@@ -43,6 +48,8 @@ export default class StaffRepository {
                 s.start_date,
                 s.account.phone,
                 s.account.email,
+                s.account.status as AccountStatus,
+                s.status_work as StaffStatus,
                 role
             )
         } catch (error) {
@@ -57,7 +64,8 @@ export default class StaffRepository {
                     account_id: staff.id,
                     staff_code: staff.staffId,
                     position: staff.position,
-                    start_date: staff.startDate
+                    start_date: staff.startDate,
+                    status_work: staff.statusWork
                 }
             })
         } catch (error) {
@@ -71,7 +79,8 @@ export default class StaffRepository {
                 where: { account_id: accountId },
                 data: {
                     position: staff.position,
-                    start_date: staff.startDate
+                    start_date: staff.startDate,
+                    status_work: staff.statusWork
                 }
             })
         } catch (error) {

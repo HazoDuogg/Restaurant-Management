@@ -26,9 +26,16 @@ export class ReservationService {
         return await this.reservationRepo.findByStatus(status);
     }
 
-    async create(customerId: number, tableId: number, reservationTime: Date, numberOfPeople: number): Promise<void> {
+    async create(
+        customerId: number | null,
+        tableId: number,
+        reservationTime: Date,
+        numberOfPeople: number,
+        guestName?: string,
+        guestPhone?: string
+    ): Promise<void> {
         if (numberOfPeople <= 0) throw new Error('Số người phải lớn hơn 0');
-        if (reservationTime <= new Date()) throw new Error('Thời gian đặt bàn phải là tương lai');
+        if (reservationTime <= new Date()) throw new Error('Vui lòng chọn thời gian sau giờ hiện tại!!');
 
         const table = await this.tableRepo.findById(tableId);
         if (!table) throw new Error(`Bàn với ID ${tableId} không tồn tại`);
@@ -36,8 +43,25 @@ export class ReservationService {
         if (table.capacity < numberOfPeople) throw new Error(`Bàn chỉ chứa tối đa ${table.capacity} người`);
 
         const reservation = new Reservation(0, reservationTime, numberOfPeople, ReservationStatus.PENDING, table);
-        reservation.customer = { id: customerId } as any;
+        if (customerId) reservation.customer = { id: customerId } as any;
+        if (guestName) reservation.guestName = guestName;
+        if (guestPhone) reservation.guestPhone = guestPhone;
         await this.reservationRepo.create(reservation);
+        await this.tableRepo.updateStatus(tableId, TableStatus.RESERVED);
+    }
+
+    async update(id: number, reservationTime: Date, numberOfPeople: number): Promise<void> {
+        const reservation = await this.reservationRepo.findById(id);
+        if (!reservation) throw new Error(`Đặt bàn với ID ${id} không tồn tại`);
+        if (reservation.status !== ReservationStatus.PENDING) {
+            throw new Error('Chỉ có thể chỉnh sửa đặt bàn đang chờ xác nhận');
+        }
+        if (numberOfPeople <= 0) throw new Error('Số người phải lớn hơn 0');
+        if (reservationTime <= new Date()) throw new Error('Vui lòng chọn thời gian sau giờ hiện tại');
+        if (reservation.table && reservation.table.capacity < numberOfPeople) {
+            throw new Error(`Bàn chỉ chứa tối đa ${reservation.table.capacity} người`);
+        }
+        await this.reservationRepo.update(id, reservationTime, numberOfPeople);
     }
 
     async confirm(id: number): Promise<void> {

@@ -139,5 +139,15 @@ export class OrderItem {
         return this._unitPrice * this._quantity;
     }
 
+    public toJSON() {
+        return {
+            id: this._id,
+            quantity: this._quantity,
+            unitPrice: this._unitPrice,
+            totalPrice: this._totalPrice,
+            menuItem: this._menuItem,
+        };
+    }
+
 }
 >>>>>>> ce76514e393de78b6182dc269ef052244959a800

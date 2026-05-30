@@ -30,7 +30,7 @@ export class OrderService {
         return await this.orderRepo.findByStatus(status);
     }
 
-    async create(staffId: number, tableId: number, customerId: number | null): Promise<void> {
+    async create(staffId: number, tableId: number, customerId: number | null): Promise<number> {
         const table = await this.tableRepo.findById(tableId);
         if (!table) throw new Error(`Bàn với ID ${tableId} không tồn tại`);
 
@@ -38,8 +38,9 @@ export class OrderService {
         order.staff = { id: staffId } as any;
         if (customerId) order.customer = { id: customerId } as any;
 
-        await this.orderRepo.create(order);
+        const orderId = await this.orderRepo.create(order);
         await this.tableRepo.updateStatus(tableId, TableStatus.OCCUPIED);
+        return orderId;
     }
 
     async addItem(orderId: number, menuItemId: number, quantity: number): Promise<void> {

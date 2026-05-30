@@ -3,6 +3,8 @@ import Admin from "../models/Admin.js";
 import Staff from "../models/Staff.js";
 import Role from "../models/Role.js";
 import { prisma } from '../config/prisma.js'
+import type { AccountStatus } from "../models/enums.js";
+import { StaffStatus } from "../models/enums.js";
 
 export default class AccountRepository {
 
@@ -14,17 +16,19 @@ export default class AccountRepository {
             return accounts.map((a: any) => {
                 const role = a.role ? new Role(a.role.id, a.role.name, null) : null;
                 if (a.admin) {
-                    return new Admin(a.id, a.name, a.password, a.phone, a.email, role);
+                    return new Admin(a.id, a.name, a.password, a.phone, a.email, a.status, role);
                 } else if (a.staff) {
                     return new Staff(
                         a.id, a.name, a.password,
                         a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
-                        a.phone, a.email, role
+                        a.phone, a.email, a.status as AccountStatus,
+                        (a.staff.status_work ?? 'ACTIVE') as StaffStatus,
+                        role
                     );
                 } else {
                     return new Customer(
                         a.id, a.name, a.password,
-                        a.customer?.customer_code ?? '', a.phone, a.email, role
+                        a.customer?.customer_code ?? '', a.phone, a.email, a.status, role
                     );
                 }
             });
@@ -42,21 +46,52 @@ export default class AccountRepository {
             if (!a) return null;
             const role = a.role ? new Role(a.role.id, a.role.name, null) : null;
             if (a.admin) {
-                return new Admin(a.id, a.name, a.password, a.phone, a.email, role);
+                return new Admin(a.id, a.name, a.password, a.phone, a.email, a.status as AccountStatus, role);
             } else if (a.staff) {
                 return new Staff(
                     a.id, a.name, a.password,
                     a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
-                    a.phone, a.email, role
+                    a.phone, a.email, a.status as AccountStatus,
+                    (a.staff.status_work ?? 'ACTIVE') as StaffStatus,
+                    role
                 );
             } else {
                 return new Customer(
                     a.id, a.name, a.password,
-                    a.customer?.customer_code ?? '', a.phone, a.email, role
+                    a.customer?.customer_code ?? '', a.phone, a.email, a.status as AccountStatus, role
                 );
             }
         } catch (error) {
             throw new Error(`Không tìm thấy tài khoản với ID ${id}: ${error}`);
+        }
+    }
+
+    async findByPhoneNumber(phoneNum: string): Promise<Customer | Admin | Staff | null> {
+        try {
+            const a = await prisma.account.findFirst({
+                where: { phone: phoneNum },
+                include: { role: true, admin: true, staff: true, customer: true }
+            })
+            if (!a) return null;
+            const role = a.role ? new Role(a.role.id, a.role.name, null) : null;
+            if (a.admin) {
+                return new Admin(a.id, a.name, a.password, a.phone, a.email, a.status as AccountStatus, role);
+            } else if (a.staff) {
+                return new Staff(
+                    a.id, a.name, a.password,
+                    a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
+                    a.phone, a.email, a.status as AccountStatus,
+                    (a.staff.status_work ?? 'ACTIVE') as StaffStatus,
+                    role
+                );
+            } else {
+                return new Customer(
+                    a.id, a.name, a.password,
+                    a.customer?.customer_code ?? '', a.phone, a.email, a.status as AccountStatus, role
+                );
+            }
+        } catch (error) {
+            throw new Error(`Không tìm thấy tài khoản với số điện thoại "${phoneNum}": ${error}`);
         }
     }
 
@@ -69,17 +104,19 @@ export default class AccountRepository {
             if (!a) return null;
             const role = a.role ? new Role(a.role.id, a.role.name, null) : null;
             if (a.admin) {
-                return new Admin(a.id, a.name, a.password, a.phone, a.email, role);
+                return new Admin(a.id, a.name, a.password, a.phone, a.email, a.status as AccountStatus, role);
             } else if (a.staff) {
                 return new Staff(
                     a.id, a.name, a.password,
                     a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
-                    a.phone, a.email, role
+                    a.phone, a.email, a.status as AccountStatus,
+                    (a.staff.status_work ?? 'ACTIVE') as StaffStatus,
+                    role
                 );
             } else {
                 return new Customer(
                     a.id, a.name, a.password,
-                    a.customer?.customer_code ?? '', a.phone, a.email, role
+                    a.customer?.customer_code ?? '', a.phone, a.email, a.status as AccountStatus, role
                 );
             }
         } catch (error) {
@@ -87,9 +124,9 @@ export default class AccountRepository {
         }
     }
 
-    async createAccount(account: Admin | Customer | Staff): Promise<void> {
+    async createAccount(account: Admin | Customer | Staff): Promise<number> {
         try {
-            await prisma.account.create({
+            const created = await prisma.account.create({
                 data: {
                     password: account.password,
                     name: account.name,
@@ -99,6 +136,7 @@ export default class AccountRepository {
                     status: 'ACTIVE'
                 }
             });
+            return created.id;
         } catch (error) {
             throw new Error(`Không thể tạo tài khoản: ${error}`);
         }

@@ -45,7 +45,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/customer-history" element={<PrivateRoute><CustomerHistoryPage /></PrivateRoute>} />
-        <Route path="/reservation" element={<PrivateRoute><CustomerReservationPage /></PrivateRoute>} />
+        <Route path="/reservation" element={<CustomerReservationPage />} />
         <Route path="/admin" element={<AuthRole roles={["ADMIN"]}><AdminDashboardPage /></AuthRole>} />
         <Route path="/admin/menu" element={<AuthRole roles={["ADMIN"]}><AdminMenuPage /></AuthRole>} />
         <Route path="/admin/tables" element={<AuthRole roles={["ADMIN"]}><AdminTablesPage /></AuthRole>} />

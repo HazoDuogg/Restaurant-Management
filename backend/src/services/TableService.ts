@@ -1,5 +1,5 @@
 import Table from "../models/Table.js";
-import { TableStatus } from "../models/enums.js";
+import { TableStatus, TableType } from "../models/enums.js";
 import TableRepository from "../repositories/TableRepository.js";
 
 export class TableService {
@@ -24,11 +24,11 @@ export class TableService {
         return await this.tableRepo.findByStatus(status);
     }
 
-    async create(tableNumber: number, capacity: number): Promise<void> {
+    async create(tableNumber: number, capacity: number, type: TableType = TableType.NORMAL): Promise<void> {
         if (tableNumber <= 0) throw new Error('Số bàn phải lớn hơn 0');
         if (capacity <= 0) throw new Error('Sức chứa phải lớn hơn 0');
 
-        const table = new Table(0, tableNumber, capacity, TableStatus.AVAILABLE);
+        const table = new Table(0, tableNumber, capacity, type, TableStatus.AVAILABLE);
         await this.tableRepo.create(table);
     }
 
@@ -38,7 +38,7 @@ export class TableService {
         if (tableNumber <= 0) throw new Error('Số bàn phải lớn hơn 0');
         if (capacity <= 0) throw new Error('Sức chứa phải lớn hơn 0');
 
-        const table = new Table(id, tableNumber, capacity, existing.status);
+        const table = new Table(id, tableNumber, capacity, existing.type, existing.status);
         await this.tableRepo.update(id, table);
     }
 

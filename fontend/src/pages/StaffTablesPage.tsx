@@ -1,96 +1,121 @@
-import { useState } from "react"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { api } from "../lib/api"
+import StaffUserMenu from "../components/StaffUserMenu"
 
-type TableStatus = "available" | "occupied" | "reserved"
+type TableStatus = "AVAILABLE" | "OCCUPIED" | "RESERVED"
+type TableType = "NORMAL" | "VIP"
 
 interface TableData {
-  num: number
-  display: string
-  cap: string
+  id: number
+  tableNumber: number
+  capacity: number
+  type: TableType
   status: TableStatus
-  time?: string
-  emoji: string
-  zone: "indoor" | "vip"
-  reservation?: string
 }
 
-const tables: TableData[] = [
-  { num: 1, display: "Bàn 01", cap: "2 người", status: "occupied", time: "45ph", emoji: "🪑", zone: "indoor" },
-  { num: 2, display: "Bàn 02", cap: "2 người", status: "occupied", time: "12ph", emoji: "🪑", zone: "indoor" },
-  { num: 3, display: "Bàn 03", cap: "4 người", status: "reserved", emoji: "🪑", zone: "indoor", reservation: "Nguyễn Thị Lan · 18:00 · 4 người" },
-  { num: 4, display: "Bàn 04", cap: "4 người", status: "available", emoji: "🪑", zone: "indoor" },
-  { num: 5, display: "Bàn 05", cap: "6 người", status: "occupied", time: "28ph", emoji: "🪑", zone: "indoor" },
-  { num: 6, display: "Bàn 06", cap: "6 người", status: "occupied", time: "67ph", emoji: "🪑", zone: "indoor" },
-  { num: 7, display: "Bàn 07", cap: "4 người", status: "available", emoji: "🪑", zone: "indoor" },
-  { num: 8, display: "Bàn 08", cap: "6 người", status: "reserved", emoji: "🪑", zone: "indoor", reservation: "Trần Văn Minh · 19:30 · 6 người" },
-  { num: 9, display: "Bàn 09", cap: "4 người", status: "available", emoji: "🪑", zone: "indoor" },
-  { num: 10, display: "Bàn 10", cap: "4 người", status: "available", emoji: "🪑", zone: "indoor" },
-  { num: 11, display: "Bàn VIP 11", cap: "10 người", status: "reserved", emoji: "🛋️", zone: "vip", reservation: "Lê Quốc Bảo · 20:00 · 10 người" },
-  { num: 12, display: "Bàn VIP 12", cap: "12 người", status: "available", emoji: "🛋️", zone: "vip" },
-]
-
-const quickStats = [
-  { icon: "🟢", num: 5, label: "Bàn trống" },
-  { icon: "🔴", num: 4, label: "Đang phục vụ" },
-  { icon: "🟡", num: 3, label: "Đặt trước" },
-  { icon: "🪑", num: 12, label: "Tổng bàn" },
-]
-
-const occupiedList = [
-  { label: "Bàn 01", info: "45 phút · 3 món", color: "text-red-500" },
-  { label: "Bàn 02", info: "12 phút · 2 món", color: "text-emerald-500" },
-  { label: "Bàn 05", info: "28 phút · 5 món", color: "text-amber-500" },
-  { label: "Bàn 06", info: "67 phút · 7 món", color: "text-red-500" },
-]
-
-const upcomingReservations = [
-  { time: "18:00 · Bàn 03", guests: "4 người" },
-  { time: "19:30 · Bàn 08", guests: "6 người" },
-  { time: "20:00 · Bàn 11", guests: "10 người" },
-]
-
 export default function StaffTablesPage() {
-  const [selected, setSelected] = useState<TableData | null>(tables[6])
+  const [tables, setTables] = useState<TableData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<TableData | null>(null)
+  const [navigating, setNavigating] = useState(false)
   const navigate = useNavigate()
 
+  const handlePaymentNavigate = async (table: TableData) => {
+    setNavigating(true)
+    try {
+      const res = await api.get(`/orders/table/${table.id}`)
+      const orders: any[] = res.data.data
+      const activeOrder = orders.find((o: any) => o.status === "CONFIRMED")
+      if (!activeOrder) {
+        alert("Không tìm thấy order đang hoạt động cho bàn này.")
+        return
+      }
+      const orderItems = activeOrder.items.map((item: any) => ({
+        emoji: "🍽️",
+        name: item.menuItem?.name ?? "Món ăn",
+        qty: item.quantity,
+        price: item.unitPrice,
+        total: item.totalPrice,
+      }))
+      navigate("/staff/payment", {
+        state: { orderItems, orderId: activeOrder.id, tableId: table.id, tableNumber: table.tableNumber },
+      })
+    } catch {
+      alert("Không thể lấy thông tin order. Vui lòng thử lại.")
+    } finally {
+      setNavigating(false)
+    }
+  }
+
+  useEffect(() => {
+    api.get("/tables")
+      .then((res) => {
+        const data: TableData[] = res.data.data
+        setTables(data)
+        const firstAvailable = data.find((t) => t.status === "AVAILABLE") ?? null
+        setSelected(firstAvailable)
+      })
+      .catch((err) => console.error("Lỗi khi lấy danh sách bàn", err))
+      .finally(() => setLoading(false))
+  }, [])
+
   const handleSelect = (table: TableData) => {
-    if (table.status === "occupied") return
     setSelected(table)
   }
 
   const cardClass = (table: TableData) => {
-    const isSelected = selected?.num === table.num
+    const isSelected = selected?.id === table.id
+    if (isSelected && table.status === "OCCUPIED") return "border-red-600 bg-red-50 shadow-[0_0_0_3px_rgba(220,38,38,0.15)] -translate-y-0.5 cursor-pointer"
     if (isSelected) return "border-blue-600 bg-blue-50 shadow-[0_0_0_3px_rgba(37,99,235,0.15)] -translate-y-0.5 cursor-pointer"
-    if (table.status === "available") return "border-emerald-300 bg-emerald-50 hover:-translate-y-1 hover:shadow-lg cursor-pointer"
-    if (table.status === "reserved") return "border-yellow-300 bg-yellow-50 hover:-translate-y-0.5 cursor-pointer"
-    return "border-red-300 bg-red-50 cursor-default opacity-80"
+    if (table.status === "AVAILABLE") return "border-emerald-300 bg-emerald-50 hover:-translate-y-1 hover:shadow-lg cursor-pointer"
+    if (table.status === "RESERVED") return "border-yellow-300 bg-yellow-50 hover:-translate-y-0.5 cursor-pointer"
+    return "border-red-300 bg-red-50 hover:-translate-y-0.5 hover:shadow-md cursor-pointer"
   }
 
   const statusText = (table: TableData) => {
-    if (selected?.num === table.num) return "✓ Đã chọn"
-    if (table.status === "occupied") return "Đang phục vụ"
-    if (table.status === "reserved") {
-      const time = table.reservation?.split("·")[1]?.trim() ?? ""
-      return `Đặt trước ${time}`
-    }
+    if (selected?.id === table.id) return "✓ Đã chọn"
+    if (table.status === "OCCUPIED") return "Đang phục vụ"
+    if (table.status === "RESERVED") return "Đặt trước"
     return "Còn trống"
   }
 
   const statusColor = (table: TableData) => {
-    if (selected?.num === table.num) return "text-blue-600"
-    if (table.status === "occupied") return "text-red-800"
-    if (table.status === "reserved") return "text-amber-800"
+    if (selected?.id === table.id) return "text-blue-600"
+    if (table.status === "OCCUPIED") return "text-red-800"
+    if (table.status === "RESERVED") return "text-amber-800"
     return "text-emerald-800"
   }
 
-  const indoorTables = tables.filter((t) => t.zone === "indoor")
-  const vipTables = tables.filter((t) => t.zone === "vip")
+  const displayName = (t: TableData) =>
+    t.type === "VIP" ? `Bàn VIP ${t.tableNumber}` : `Bàn ${String(t.tableNumber).padStart(2, "0")}`
+
+  const emoji = (t: TableData) => t.type === "VIP" ? "🛋️" : "🪑"
+
+  const indoorTables = tables.filter((t) => t.type === "NORMAL")
+  const vipTables = tables.filter((t) => t.type === "VIP")
+
+  const stats = {
+    available: tables.filter((t) => t.status === "AVAILABLE").length,
+    occupied: tables.filter((t) => t.status === "OCCUPIED").length,
+    reserved: tables.filter((t) => t.status === "RESERVED").length,
+    total: tables.length,
+  }
+
+  const occupiedTables = tables.filter((t) => t.status === "OCCUPIED")
+  const reservedTables = tables.filter((t) => t.status === "RESERVED")
+
+  const selectedStatusLabel =
+    selected?.status === "AVAILABLE" ? "Còn trống" : selected?.status === "RESERVED" ? "Đặt trước" : "Đang phục vụ"
+  const selectedStatusColor =
+    selected?.status === "AVAILABLE" ? "text-emerald-600" : selected?.status === "RESERVED" ? "text-amber-600" : "text-red-600"
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Topbar */}
       <div className="bg-gradient-to-r from-[#1E3A5F] to-blue-600 px-7 h-[60px] flex items-center justify-between">
-        <span className="font-serif text-xl text-white">🍜 Việt Bếp</span>
+        <span className="font-sans text-xl text-white">🍜 Việt Bếp</span>
         <div className="flex gap-1">
           <Link to="/staff/tables" className="px-4 py-1.5 rounded-lg text-sm font-medium bg-white/20 text-white">
             🗺️ Sơ đồ bàn
@@ -99,25 +124,26 @@ export default function StaffTablesPage() {
             📋 Gọi món
           </Link>
         </div>
-        <div className="flex items-center gap-2.5 text-white text-sm font-medium">
-          <div className="w-8 h-8 rounded-full bg-white/25 flex items-center justify-center font-bold text-[13px]">H</div>
-          <span>Nguyễn Thị Hoa</span>
-          <span className="bg-white/15 px-2.5 py-0.5 rounded-full text-xs">Phục vụ</span>
-        </div>
+        <StaffUserMenu />
       </div>
 
       <div className="max-w-[1100px] mx-auto px-7 py-7">
         {/* Page Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-[22px] font-bold font-serif">Sơ đồ bàn</h1>
+            <h1 className="text-[22px] font-bold font-sans">Sơ đồ bàn</h1>
             <p className="text-[13px] text-gray-500 mt-0.5">
-              Chọn bàn để bắt đầu nhận order · 25/12/2024 · 18:30
+              Chọn bàn để bắt đầu nhận order · {new Date().toLocaleDateString("vi-VN")} · {new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>
           <button
-            onClick={() => selected && navigate("/staff/order")}
-            disabled={!selected}
+            onClick={() =>
+              selected && selected.status !== "OCCUPIED" &&
+              navigate("/staff/order", {
+                state: { tableId: selected.id, tableNumber: selected.tableNumber, capacity: selected.capacity },
+              })
+            }
+            disabled={!selected || selected.status === "OCCUPIED"}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
             📋 Gọi món cho bàn đã chọn
@@ -126,7 +152,12 @@ export default function StaffTablesPage() {
 
         {/* Quick Stats */}
         <div className="flex gap-3 mb-6">
-          {quickStats.map((s) => (
+          {[
+            { icon: "🟢", num: stats.available, label: "Bàn trống" },
+            { icon: "🔴", num: stats.occupied, label: "Đang phục vụ" },
+            { icon: "🟡", num: stats.reserved, label: "Đặt trước" },
+            { icon: "🪑", num: stats.total, label: "Tổng bàn" },
+          ].map((s) => (
             <div key={s.label} className="bg-white border border-gray-200 rounded-xl px-5 py-3.5 flex items-center gap-3">
               <span className="text-[22px]">{s.icon}</span>
               <div>
@@ -155,52 +186,61 @@ export default function StaffTablesPage() {
               ))}
             </div>
 
-            {/* Indoor Zone */}
-            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-              🏠 Khu vực trong
-            </div>
-            <div className="grid grid-cols-4 gap-3 mb-5">
-              {indoorTables.map((table) => (
-                <div
-                  key={table.num}
-                  onClick={() => handleSelect(table)}
-                  className={`relative rounded-xl p-4 text-center border-2 transition-all duration-200 select-none ${cardClass(table)}`}
-                >
-                  {table.time && (
-                    <div className="absolute top-1.5 right-1.5 bg-black/15 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-                      {table.time}
+            {loading ? (
+              <div className="text-center py-16 text-gray-400 text-sm">Đang tải sơ đồ bàn...</div>
+            ) : (
+              <>
+                {/* Indoor Zone */}
+                {indoorTables.length > 0 && (
+                  <>
+                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                      🏠 Khu vực trong
                     </div>
-                  )}
-                  <div className="text-[26px] mb-1">{table.emoji}</div>
-                  <div className="text-sm font-bold">{table.display}</div>
-                  <div className="text-xs font-medium opacity-75">{table.cap}</div>
-                  <div className={`text-[11px] font-bold mt-1.5 uppercase tracking-wide ${statusColor(table)}`}>
-                    {statusText(table)}
-                  </div>
-                </div>
-              ))}
-            </div>
+                    <div className="grid grid-cols-4 gap-3 mb-5">
+                      {indoorTables.map((table) => (
+                        <div
+                          key={table.id}
+                          onClick={() => handleSelect(table)}
+                          className={`relative rounded-xl p-4 text-center border-2 transition-all duration-200 select-none ${cardClass(table)}`}
+                        >
+                          <div className="text-[26px] mb-1">{emoji(table)}</div>
+                          <div className="text-sm font-bold">{displayName(table)}</div>
+                          <div className="text-xs font-medium opacity-75">{table.capacity} người</div>
+                          <div className={`text-[11px] font-bold mt-1.5 uppercase tracking-wide ${statusColor(table)}`}>
+                            {statusText(table)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
 
-            {/* VIP Zone */}
-            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 pt-3 border-t border-dashed border-gray-200">
-              🌟 Khu VIP
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {vipTables.map((table) => (
-                <div
-                  key={table.num}
-                  onClick={() => handleSelect(table)}
-                  className={`relative rounded-xl p-4 text-center border-2 transition-all duration-200 select-none ${cardClass(table)}`}
-                >
-                  <div className="text-[26px] mb-1">{table.emoji}</div>
-                  <div className="text-sm font-bold">{table.display}</div>
-                  <div className="text-xs font-medium opacity-75">{table.cap}</div>
-                  <div className={`text-[11px] font-bold mt-1.5 uppercase tracking-wide ${statusColor(table)}`}>
-                    {statusText(table)}
-                  </div>
-                </div>
-              ))}
-            </div>
+                {/* VIP Zone */}
+                {vipTables.length > 0 && (
+                  <>
+                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 pt-3 border-t border-dashed border-gray-200">
+                      🌟 Khu VIP
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {vipTables.map((table) => (
+                        <div
+                          key={table.id}
+                          onClick={() => handleSelect(table)}
+                          className={`relative rounded-xl p-4 text-center border-2 transition-all duration-200 select-none ${cardClass(table)}`}
+                        >
+                          <div className="text-[26px] mb-1">{emoji(table)}</div>
+                          <div className="text-sm font-bold">{displayName(table)}</div>
+                          <div className="text-xs font-medium opacity-75">{table.capacity} người</div>
+                          <div className={`text-[11px] font-bold mt-1.5 uppercase tracking-wide ${statusColor(table)}`}>
+                            {statusText(table)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
 
           {/* Side Panel */}
@@ -211,52 +251,73 @@ export default function StaffTablesPage() {
               {selected ? (
                 <>
                   {[
-                    { label: "Bàn số", value: selected.display, valueClass: "text-blue-600" },
-                    { label: "Sức chứa", value: selected.cap },
-                    {
-                      label: "Trạng thái",
-                      value: selected.status === "available" ? "Còn trống" : "Đặt trước",
-                      valueClass: selected.status === "available" ? "text-emerald-600" : "text-amber-600",
-                    },
-                    { label: "Đặt trước", value: selected.reservation ?? "–", valueClass: "text-xs" },
+                    { label: "Bàn số", value: displayName(selected), valueClass: "text-blue-600" },
+                    { label: "Sức chứa", value: `${selected.capacity} người` },
+                    { label: "Loại bàn", value: selected.type === "VIP" ? "VIP" : "Thường" },
+                    { label: "Trạng thái", value: selectedStatusLabel, valueClass: selectedStatusColor },
                   ].map((r) => (
                     <div key={r.label} className="flex justify-between text-[13px] py-1.5 border-b border-gray-100 last:border-0">
                       <span className="text-gray-500">{r.label}</span>
                       <span className={`font-semibold ${r.valueClass ?? ""}`}>{r.value}</span>
                     </div>
                   ))}
-                  <button
-                    onClick={() => navigate("/staff/order")}
-                    className="w-full mt-3 py-3 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition"
-                  >
-                    📋 Nhận order cho bàn này →
-                  </button>
+                  <div className="flex flex-col gap-2 mt-3">
+                    <button
+                      onClick={() =>
+                        selected.status !== "OCCUPIED" &&
+                        navigate("/staff/order", {
+                          state: { tableId: selected.id, tableNumber: selected.tableNumber, capacity: selected.capacity },
+                        })
+                      }
+                      disabled={selected.status === "OCCUPIED"}
+                      className="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    >
+                      📋 Nhận order
+                    </button>
+                    <button
+                      onClick={() => selected.status === "OCCUPIED" && handlePaymentNavigate(selected)}
+                      disabled={selected.status !== "OCCUPIED" || navigating}
+                      className="w-full py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    >
+                      {navigating ? "Đang tải..." : "💳 Thanh toán"}
+                    </button>
+                  </div>
                 </>
               ) : (
-                <div className="text-center py-8 text-gray-400 text-sm">Chưa chọn bàn nào</div>
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  {loading ? "Đang tải..." : "Chưa chọn bàn nào"}
+                </div>
               )}
             </div>
 
             {/* Occupied Tables */}
             <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <div className="text-sm font-bold mb-3">🔴 Đang phục vụ</div>
-              {occupiedList.map((t) => (
-                <div key={t.label} className="flex justify-between text-[13px] py-1.5 border-b border-gray-100 last:border-0">
-                  <span className="text-gray-500">{t.label}</span>
-                  <span className={`text-xs font-semibold ${t.color}`}>{t.info}</span>
-                </div>
-              ))}
+              <div className="text-sm font-bold mb-3">🔴 Đang phục vụ ({occupiedTables.length})</div>
+              {occupiedTables.length === 0 ? (
+                <div className="text-xs text-gray-400 py-2">Không có bàn nào đang phục vụ</div>
+              ) : (
+                occupiedTables.map((t) => (
+                  <div key={t.id} className="flex justify-between text-[13px] py-1.5 border-b border-gray-100 last:border-0">
+                    <span className="text-gray-500">{displayName(t)}</span>
+                    <span className="text-xs font-semibold text-red-500">{t.capacity} người</span>
+                  </div>
+                ))
+              )}
             </div>
 
-            {/* Upcoming Reservations */}
+            {/* Reserved Tables */}
             <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <div className="text-sm font-bold mb-3">🟡 Đặt trước sắp tới</div>
-              {upcomingReservations.map((r) => (
-                <div key={r.time} className="flex justify-between text-[13px] py-1.5 border-b border-gray-100 last:border-0">
-                  <span className="text-gray-500">{r.time}</span>
-                  <span className="text-xs font-semibold">{r.guests}</span>
-                </div>
-              ))}
+              <div className="text-sm font-bold mb-3">🟡 Đặt trước ({reservedTables.length})</div>
+              {reservedTables.length === 0 ? (
+                <div className="text-xs text-gray-400 py-2">Không có bàn đặt trước</div>
+              ) : (
+                reservedTables.map((t) => (
+                  <div key={t.id} className="flex justify-between text-[13px] py-1.5 border-b border-gray-100 last:border-0">
+                    <span className="text-gray-500">{displayName(t)}</span>
+                    <span className="text-xs font-semibold text-amber-600">{t.capacity} người</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

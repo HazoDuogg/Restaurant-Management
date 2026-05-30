@@ -161,5 +161,19 @@ export class MenuItem {
         this._status = status;
     }
 
+<<<<<<< HEAD
 >>>>>>> ce76514e393de78b6182dc269ef052244959a800
+=======
+    public toJSON() {
+        return {
+            id: this._id,
+            name: this._name,
+            price: this._price,
+            description: this._description,
+            status: this._status,
+            category: this._category,
+        };
+    }
+
+>>>>>>> main
 }
