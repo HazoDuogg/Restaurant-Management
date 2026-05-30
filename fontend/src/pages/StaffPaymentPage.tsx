@@ -119,7 +119,11 @@ export default function StaffPaymentPage() {
       {/* Topbar */}
       <div className="bg-gradient-to-r from-[#1E3A5F] to-blue-600 px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/staff/order/detail" className="text-white/80 text-[13px] hover:text-white transition-colors">
+          <Link
+            to="/staff/order/detail"
+            state={{ orderId, tableId, tableNumber, tableCapacity }}
+            className="text-white/80 text-[13px] hover:text-white transition-colors"
+          >
             ← Chi tiết order
           </Link>
           <span className="font-serif text-lg text-white">💳 Thanh toán</span>

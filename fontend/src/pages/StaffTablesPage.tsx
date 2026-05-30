@@ -20,17 +20,52 @@ export default function StaffTablesPage() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<TableData | null>(null)
   const [navigating, setNavigating] = useState(false)
+  const [pendingEmptyOrderId, setPendingEmptyOrderId] = useState<number | null>(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    let cancelled = false
+    const check = async () => {
+      if (!selected || selected.status !== "OCCUPIED") {
+        setPendingEmptyOrderId(null)
+        return
+      }
+      try {
+        const res = await api.get(`/orders/table/${selected.id}`)
+        if (cancelled) return
+        const orders: any[] = res.data.data
+        const pendingOrder = orders.find((o: any) => o.status === "PENDING")
+        setPendingEmptyOrderId(
+          pendingOrder && (!pendingOrder.items || pendingOrder.items.length === 0)
+            ? pendingOrder.id
+            : null
+        )
+      } catch {
+        if (!cancelled) setPendingEmptyOrderId(null)
+      }
+    }
+    check()
+    return () => { cancelled = true }
+  }, [selected])
 
   const handlePaymentNavigate = async (table: TableData) => {
     setNavigating(true)
     try {
       const res = await api.get(`/orders/table/${table.id}`)
       const orders: any[] = res.data.data
-      const activeOrder = orders.find((o: any) => o.status === "CONFIRMED")
+      let activeOrder = orders.find((o: any) => o.status === "CONFIRMED")
       if (!activeOrder) {
-        alert("Không tìm thấy order đang hoạt động cho bàn này.")
-        return
+        const pendingOrder = orders.find((o: any) => o.status === "PENDING")
+        if (!pendingOrder) {
+          alert("Không tìm thấy order đang hoạt động cho bàn này.")
+          return
+        }
+        if (!pendingOrder.items || pendingOrder.items.length === 0) {
+          alert("Order chưa có món ăn, vui lòng thêm món trước khi thanh toán.")
+          return
+        }
+        await api.patch(`/orders/${pendingOrder.id}/confirm`)
+        activeOrder = pendingOrder
       }
       const orderItems = activeOrder.items.map((item: any) => ({
         emoji: "🍽️",
@@ -137,13 +172,18 @@ export default function StaffTablesPage() {
             </p>
           </div>
           <button
-            onClick={() =>
-              selected && selected.status !== "OCCUPIED" &&
+            onClick={() => {
+              if (!selected) return
+              const canOrder = selected.status !== "OCCUPIED" || pendingEmptyOrderId !== null
+              if (!canOrder) return
               navigate("/staff/order", {
-                state: { tableId: selected.id, tableNumber: selected.tableNumber, capacity: selected.capacity },
+                state: {
+                  tableId: selected.id, tableNumber: selected.tableNumber, capacity: selected.capacity,
+                  ...(pendingEmptyOrderId ? { orderId: pendingEmptyOrderId, addItemsToExisting: true } : {}),
+                },
               })
-            }
-            disabled={!selected || selected.status === "OCCUPIED"}
+            }}
+            disabled={!selected || (selected.status === "OCCUPIED" && pendingEmptyOrderId === null)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
             📋 Gọi món cho bàn đã chọn
@@ -263,13 +303,17 @@ export default function StaffTablesPage() {
                   ))}
                   <div className="flex flex-col gap-2 mt-3">
                     <button
-                      onClick={() =>
-                        selected.status !== "OCCUPIED" &&
+                      onClick={() => {
+                        const canOrder = selected.status !== "OCCUPIED" || pendingEmptyOrderId !== null
+                        if (!canOrder) return
                         navigate("/staff/order", {
-                          state: { tableId: selected.id, tableNumber: selected.tableNumber, capacity: selected.capacity },
+                          state: {
+                            tableId: selected.id, tableNumber: selected.tableNumber, capacity: selected.capacity,
+                            ...(pendingEmptyOrderId ? { orderId: pendingEmptyOrderId, addItemsToExisting: true } : {}),
+                          },
                         })
-                      }
-                      disabled={selected.status === "OCCUPIED"}
+                      }}
+                      disabled={selected.status === "OCCUPIED" && pendingEmptyOrderId === null}
                       className="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
                     >
                       📋 Nhận order

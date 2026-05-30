@@ -102,14 +102,5 @@ export default class OrderItemRepository {
         }
     }
 
-    async deleteByOrder(orderId: number): Promise<void> {
-        try {
-            await prisma.order_item.deleteMany({
-                where: { order_id: orderId }
-            })
-        } catch (error) {
-            throw new Error(`Không thể xóa tất cả món của order ID ${orderId}: ${error}`)
-        }
-    }
 
 }

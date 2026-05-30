@@ -276,7 +276,7 @@ export default function CustomerHistoryPage() {
                                         {(r.status === "PENDING" || r.status === "CONFIRMED") && (
                                             <button
                                                 onClick={() => handleCancel(r.id)}
-                                                disabled={isCancelDisable(r.reservationTime)}
+                                                disabled={!isCancelDisable(r.reservationTime)}
                                                 className="px-4 py-1.5 text-sm font-semibold border-2 border-red-300 text-red-500 rounded-lg hover:bg-red-50 transition"
                                             >
                                                 ✕ Hủy đặt bàn

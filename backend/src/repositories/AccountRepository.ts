@@ -8,35 +8,6 @@ import { StaffStatus } from "../models/enums.js";
 
 export default class AccountRepository {
 
-    async findAll(): Promise<(Customer | Admin | Staff)[]> {
-        try {
-            const accounts = await prisma.account.findMany({
-                include: { role: true, admin: true, staff: true, customer: true }
-            });
-            return accounts.map((a: any) => {
-                const role = a.role ? new Role(a.role.id, a.role.name, null) : null;
-                if (a.admin) {
-                    return new Admin(a.id, a.name, a.password, a.phone, a.email, a.status, role);
-                } else if (a.staff) {
-                    return new Staff(
-                        a.id, a.name, a.password,
-                        a.staff.staff_code ?? '', a.staff.position ?? '', a.staff.start_date,
-                        a.phone, a.email, a.status as AccountStatus,
-                        (a.staff.status_work ?? 'ACTIVE') as StaffStatus,
-                        role
-                    );
-                } else {
-                    return new Customer(
-                        a.id, a.name, a.password,
-                        a.customer?.customer_code ?? '', a.phone, a.email, a.status, role
-                    );
-                }
-            });
-        } catch (error) {
-            throw new Error(`Không thể lấy danh sách tài khoản: ${error}`);
-        }
-    }
-
     async findById(id: number): Promise<Customer | Admin | Staff | null> {
         try {
             const a = await prisma.account.findUnique({
@@ -68,8 +39,9 @@ export default class AccountRepository {
 
     async findByPhoneNumber(phoneNum: string): Promise<Customer | Admin | Staff | null> {
         try {
+            const normalized = phoneNum.replace(/[\s\-().+]/g, '').replace(/^84/, '0');
             const a = await prisma.account.findFirst({
-                where: { phone: phoneNum },
+                where: { phone: { in: [phoneNum, normalized] } },
                 include: { role: true, admin: true, staff: true, customer: true }
             })
             if (!a) return null;
@@ -126,11 +98,12 @@ export default class AccountRepository {
 
     async createAccount(account: Admin | Customer | Staff): Promise<number> {
         try {
+            const rawPhone = account.phone?.replace(/[\s\-().+]/g, '').replace(/^84/, '0') || null;
             const created = await prisma.account.create({
                 data: {
                     password: account.password,
                     name: account.name,
-                    phone: account.phone,
+                    phone: rawPhone,
                     email: account.email ?? "",
                     role_id: account.role?.id ?? null,
                     status: 'ACTIVE'

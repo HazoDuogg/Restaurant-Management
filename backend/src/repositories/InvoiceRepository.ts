@@ -88,37 +88,6 @@ export default class InvoiceRepository {
         }
     }
 
-    async findByInvoiceCode(invoiceCode: string): Promise<Invoice | null> {
-        try {
-            const i = await prisma.invoice.findUnique({
-                where: { invoice_code: invoiceCode },
-                include: {
-                    order: { include: { table: true } },
-                    invoice_details: { include: { menu_item: true } }
-                }
-            })
-            if (!i) return null
-            return this.mapToInvoice(i)
-        } catch (error) {
-            throw new Error(`Không tìm thấy hóa đơn với mã ${invoiceCode}: ${error}`)
-        }
-    }
-
-    async findByStatus(status: InvoiceStatus): Promise<Invoice[]> {
-        try {
-            const invoices = await prisma.invoice.findMany({
-                where: { status },
-                include: {
-                    order: { include: { table: true } },
-                    invoice_details: { include: { menu_item: true } }
-                }
-            })
-            return invoices.map((i: any) => this.mapToInvoice(i))
-        } catch (error) {
-            throw new Error(`Không thể lấy danh sách hóa đơn theo trạng thái "${status}": ${error}`)
-        }
-    }
-
     async findByOrder(orderId: number): Promise<Invoice | null> {
         try {
             const i = await prisma.invoice.findUnique({
@@ -151,23 +120,6 @@ export default class InvoiceRepository {
             })
         } catch (error) {
             throw new Error(`Không thể tạo hóa đơn: ${error}`)
-        }
-    }
-
-    async update(id: number, invoice: Invoice): Promise<void> {
-        try {
-            await prisma.invoice.update({
-                where: { id },
-                data: {
-                    total_amount: invoice.totalAmount,
-                    tax: invoice.tax,
-                    discount: invoice.discount,
-                    final_amount: invoice.finalAmount,
-                    status: invoice.status
-                }
-            })
-        } catch (error) {
-            throw new Error(`Không thể cập nhật hóa đơn với ID ${id}: ${error}`)
         }
     }
 
