@@ -42,7 +42,7 @@ export default class AuthController {
             await authService.register(name, password, phone ?? null, email);
             res.status(201).json({
                 success: true,
-                message: 'Đăng ký thành công'
+                message: 'Đăng ký thành công',
             });
         } catch (error) {
             res.status(400).json({
