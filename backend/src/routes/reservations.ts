@@ -7,6 +7,7 @@ const reservationController = new ReservationController();
 
 router.get('/', reservationController.getAll.bind(reservationController));
 router.get('/status/:status', reservationController.getByStatus.bind(reservationController));
+router.get('/table/:tableId', reservationController.getByTable.bind(reservationController));
 router.get('/customer/:customerId', authenticate, reservationController.getByCustomer.bind(reservationController));
 router.get('/:id', reservationController.getById.bind(reservationController));
 router.post('/', reservationController.create.bind(reservationController));

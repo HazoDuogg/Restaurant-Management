@@ -21,6 +21,7 @@ export default function StaffTablesPage() {
   const [selected, setSelected] = useState<TableData | null>(null)
   const [navigating, setNavigating] = useState(false)
   const [pendingEmptyOrderId, setPendingEmptyOrderId] = useState<number | null>(null)
+  const [reservationStatus, setReservationStatus] = useState<"PENDING" | "CONFIRMED" | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -45,6 +46,26 @@ export default function StaffTablesPage() {
       }
     }
     check()
+    return () => { cancelled = true }
+  }, [selected])
+
+  useEffect(() => {
+    let cancelled = false
+    const fetchReservation = async () => {
+      if (!selected || selected.status !== "RESERVED") {
+        setReservationStatus(null)
+        return
+      }
+      try {
+        const res = await api.get(`/reservations/table/${selected.id}`)
+        if (cancelled) return
+        const reservation = res.data.data
+        setReservationStatus(reservation ? reservation.status : null)
+      } catch {
+        if (!cancelled) setReservationStatus(null)
+      }
+    }
+    fetchReservation()
     return () => { cancelled = true }
   }, [selected])
 
@@ -87,7 +108,7 @@ export default function StaffTablesPage() {
   useEffect(() => {
     api.get("/tables")
       .then((res) => {
-        const data: TableData[] = res.data.data
+        const data: TableData[] = (res.data.data as TableData[]).sort((a, b) => a.tableNumber - b.tableNumber)
         setTables(data)
         const firstAvailable = data.find((t) => t.status === "AVAILABLE") ?? null
         setSelected(firstAvailable)
@@ -142,9 +163,18 @@ export default function StaffTablesPage() {
   const reservedTables = tables.filter((t) => t.status === "RESERVED")
 
   const selectedStatusLabel =
-    selected?.status === "AVAILABLE" ? "Còn trống" : selected?.status === "RESERVED" ? "Đặt trước" : "Đang phục vụ"
+    selected?.status === "AVAILABLE" ? "Còn trống"
+      : selected?.status === "RESERVED"
+        ? reservationStatus === "CONFIRMED" ? "Đã xác nhận"
+          : reservationStatus === "PENDING" ? "Chờ xác nhận"
+            : "Đặt trước"
+        : "Đang phục vụ"
   const selectedStatusColor =
-    selected?.status === "AVAILABLE" ? "text-emerald-600" : selected?.status === "RESERVED" ? "text-amber-600" : "text-red-600"
+    selected?.status === "AVAILABLE" ? "text-emerald-600"
+      : selected?.status === "RESERVED"
+        ? reservationStatus === "CONFIRMED" ? "text-green-600"
+          : "text-amber-600"
+        : "text-red-600"
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -171,23 +201,7 @@ export default function StaffTablesPage() {
               Chọn bàn để bắt đầu nhận order · {new Date().toLocaleDateString("vi-VN")} · {new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>
-          <button
-            onClick={() => {
-              if (!selected) return
-              const canOrder = selected.status !== "OCCUPIED" || pendingEmptyOrderId !== null
-              if (!canOrder) return
-              navigate("/staff/order", {
-                state: {
-                  tableId: selected.id, tableNumber: selected.tableNumber, capacity: selected.capacity,
-                  ...(pendingEmptyOrderId ? { orderId: pendingEmptyOrderId, addItemsToExisting: true } : {}),
-                },
-              })
-            }}
-            disabled={!selected || (selected.status === "OCCUPIED" && pendingEmptyOrderId === null)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
-          >
-            📋 Gọi món cho bàn đã chọn
-          </button>
+
         </div>
 
         {/* Quick Stats */}
@@ -304,7 +318,10 @@ export default function StaffTablesPage() {
                   <div className="flex flex-col gap-2 mt-3">
                     <button
                       onClick={() => {
-                        const canOrder = selected.status !== "OCCUPIED" || pendingEmptyOrderId !== null
+                        const canOrder =
+                          selected.status === "AVAILABLE" ||
+                          (selected.status === "OCCUPIED" && pendingEmptyOrderId !== null) ||
+                          (selected.status === "RESERVED" && reservationStatus === "CONFIRMED")
                         if (!canOrder) return
                         navigate("/staff/order", {
                           state: {
@@ -313,11 +330,15 @@ export default function StaffTablesPage() {
                           },
                         })
                       }}
-                      disabled={selected.status === "OCCUPIED" && pendingEmptyOrderId === null}
+                      disabled={
+                        (selected.status === "OCCUPIED" || selected.status === "AVAILABLE" && pendingEmptyOrderId === null) ||
+                        (selected.status === "RESERVED" && reservationStatus !== "CONFIRMED")
+                      }
                       className="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
                     >
                       📋 Nhận order
                     </button>
+
                     <button
                       onClick={() => selected.status === "OCCUPIED" && handlePaymentNavigate(selected)}
                       disabled={selected.status !== "OCCUPIED" || navigating}

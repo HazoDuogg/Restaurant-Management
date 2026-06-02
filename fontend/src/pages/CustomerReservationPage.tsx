@@ -44,7 +44,7 @@ export default function CustomerReservationPage() {
     useEffect(() => {
         api.get("/tables")
             .then((res) => {
-                const data: TableData[] = res.data.data ?? [];
+                const data: TableData[] = (res.data.data ?? []).sort((a: TableData, b: TableData) => a.tableNumber - b.tableNumber);
                 setTables(data);
                 const first = data.find((t) => t.status === "AVAILABLE");
                 console.log(res.data.data);

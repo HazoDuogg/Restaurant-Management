@@ -200,7 +200,7 @@ export default function CustomerHistoryPage() {
                         <h1 className="font-serif text-2xl font-bold">Lịch sử đặt bàn</h1>
                         <p className="text-sm text-gray-400 mt-1">Xem và quản lý các lần đặt bàn của bạn</p>
                     </div>
-                    <a href="/reservation" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+                    <a href="/customer/reservation" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
                         + Đặt bàn mới
                     </a>
                 </div>

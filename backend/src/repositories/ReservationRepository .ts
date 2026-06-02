@@ -69,6 +69,23 @@ export default class ReservationRepository {
         }
     }
 
+    async findActiveByTable(tableId: number): Promise<Reservation | null> {
+        try {
+            const r = await prisma.reservation.findFirst({
+                where: {
+                    table_id: tableId,
+                    status: { in: [ReservationStatus.PENDING, ReservationStatus.CONFIRMED] }
+                },
+                orderBy: { reservation_time: 'desc' },
+                include: INCLUDE_FULL
+            })
+            if (!r) return null
+            return mapRow(r)
+        } catch (error) {
+            throw new Error(`Không thể lấy đặt bàn của bàn ID ${tableId}: ${error}`)
+        }
+    }
+
     async findByCustomer(customerId: number): Promise<Reservation[]> {
         try {
             const rows = await prisma.reservation.findMany({ where: { customer_id: customerId }, include: INCLUDE_FULL })

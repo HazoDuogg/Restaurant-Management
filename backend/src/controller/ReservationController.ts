@@ -33,6 +33,15 @@ export class ReservationController {
         }
     }
 
+    async getByTable(req: Request, res: Response): Promise<void> {
+        try {
+            const reservation = await reservationService.getActiveByTable(Number(req.params.tableId));
+            res.status(200).json({ success: true, data: reservation });
+        } catch (error) {
+            res.status(500).json({ success: false, message: `${error}` });
+        }
+    }
+
     async getByStatus(req: Request, res: Response): Promise<void> {
         try {
             const { status } = req.params;

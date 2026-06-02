@@ -37,7 +37,7 @@ export default function LoginPage() {
             login(data, remember);
             const role = data.user?.role;
             if (role === 'ADMIN') navigation('/admin');
-            else if (role === 'STAFF') navigation('/staff/tables');
+            else if (role === 'STAFF') navigation('/reservations');
             else navigation('/');
         } catch (error: unknown) {
             if (

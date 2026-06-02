@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { useAuthStore } from "../state/auth"
 import { api } from "../lib/api"
 
@@ -19,9 +20,14 @@ export default function StaffUserMenu() {
   }, [])
 
   const handleLogout = async () => {
-    try { await api.post("/auth/logout") } catch { /* ignore */ }
-    logout()
-    navigate("/login")
+    try {
+      await api.post("/auth/logout");
+    } catch (error: any) {
+      console.error(error)
+    } finally {
+      logout();
+      navigate("/login");
+    }
   }
 
   return (
@@ -42,10 +48,10 @@ export default function StaffUserMenu() {
 
       {open && (
         <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-          <div className="px-4 py-2.5 border-b border-gray-100">
-            <div className="text-[13px] font-bold text-gray-800">{user?.name ?? "Staff"}</div>
-            <div className="text-xs text-gray-400 mt-0.5">{user?.role ?? "STAFF"}</div>
-          </div>
+          <Link to="/reservations"
+            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+            Xác nhận đặt bàn
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full text-left px-4 py-2.5 text-[13px] text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"

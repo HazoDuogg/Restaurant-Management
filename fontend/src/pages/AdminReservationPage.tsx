@@ -201,6 +201,11 @@ export default function AdminReservationsPage() {
                 <div className="p-4 border-t border-gray-200 relative">
                     {showLogout && (
                         <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                            {user?.role === "STAFF" && (
+                                <Link to="/staff/tables" className="block w-full px-5 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    Quản lý bàn
+                                </Link>
+                            )}
                             <button
                                 onClick={handleLogout}
                                 className="w-full px-5 py-3 text-sm text-red-600 font-medium hover:bg-red-50 transition text-left flex items-center gap-2"
@@ -218,7 +223,11 @@ export default function AdminReservationsPage() {
                         </div>
                         <div className="flex-1 text-left">
                             <div className="text-sm font-semibold">{user?.name ?? "Admin"}</div>
-                            <div className="text-xs text-gray-400">Quản trị viên</div>
+                            {user?.role === "STAFF" ? (
+                                <div className="text-xs text-gray-400">Nhân viên phục vụ</div>
+                            ) : (
+                                <div className="text-xs text-gray-400">Quản trị viên</div>
+                            )}
                         </div>
                         <span className="text-gray-400 text-xs">{showLogout ? "▲" : "▼"}</span>
                     </button>

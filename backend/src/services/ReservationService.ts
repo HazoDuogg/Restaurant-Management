@@ -22,6 +22,10 @@ export class ReservationService {
         return await this.reservationRepo.findByCustomer(customerId);
     }
 
+    async getActiveByTable(tableId: number): Promise<Reservation | null> {
+        return await this.reservationRepo.findActiveByTable(tableId);
+    }
+
     async getByStatus(status: ReservationStatus): Promise<Reservation[]> {
         return await this.reservationRepo.findByStatus(status);
     }

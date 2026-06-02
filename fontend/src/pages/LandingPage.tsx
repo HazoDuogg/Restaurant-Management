@@ -117,16 +117,6 @@ export default function LandingPage() {
                             </button>
                             {showDropdown && (
                                 <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
-                                    <button
-                                        onClick={() => {
-                                            logout();
-                                            setShowDropdown(false);
-                                        }}
-                                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
-                                    >
-                                        Đăng xuất
-                                    </button>
-
                                     {user.role === "CUSTOMER" && (
                                         <Link
                                             to="/customer-history"
@@ -148,14 +138,33 @@ export default function LandingPage() {
                                     )}
 
                                     {user.role === "STAFF" && (
-                                        <Link
-                                            to="/staff/tables"
-                                            onClick={() => setShowDropdown(false)}
-                                            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                        >
-                                            Quản lý bàn
-                                        </Link>
+                                        <>
+                                            <Link
+                                                to="/staff/tables"
+                                                onClick={() => setShowDropdown(false)}
+                                                className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                            >
+                                                Quản lý bàn
+                                            </Link>
+                                            <Link
+                                                to="/reservations"
+                                                onClick={() => setShowDropdown(false)}
+                                                className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                            >
+                                                Xác nhận đặt bàn
+                                            </Link>
+                                        </>
                                     )}
+
+                                    <button
+                                        onClick={() => {
+                                            logout();
+                                            setShowDropdown(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
+                                    >
+                                        Đăng xuất
+                                    </button>
                                 </div>
                             )}
                         </div>
