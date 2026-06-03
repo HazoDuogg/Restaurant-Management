@@ -13,7 +13,7 @@ const navSections = [
       { icon: "🍽️", label: "Quản lý món ăn", href: "/admin/menu" },
       { icon: "🪑", label: "Quản lý bàn", href: "/admin/tables" },
       { icon: "👨‍💼", label: "Quản lý nhân viên", href: "/admin/staff" },
-      { icon: "📋", label: "Quản lý đặt bàn", href: "/admin/reservations", badge: 3 },
+      { icon: "📋", label: "Quản lý đặt bàn", href: "/reservations" },
     ],
   },
   {

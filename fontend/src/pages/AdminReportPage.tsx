@@ -36,8 +36,6 @@ type Stats = {
   monthlyComparison: MonthRow[]
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function fmt(n: number) {
   return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "đ"
 }
@@ -86,8 +84,6 @@ const periods = ["Hôm nay", "7 ngày", "Tháng này", "Quý này", "Năm nay"]
 
 const DISH_COLORS = ["bg-blue-600", "bg-emerald-500", "bg-amber-400", "bg-red-500", "bg-blue-400"]
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export default function AdminReportPage() {
   const [activePeriod, setActivePeriod] = useState("Tháng này")
   const init = getDateRange("Tháng này")
@@ -132,6 +128,10 @@ export default function AdminReportPage() {
   }
 
   function handleApply() {
+    if (toDate < fromDate) {
+      setError("Ngày kết thúc phải sau ngày bắt đầu.");
+      return;
+    }
     setActivePeriod("")
     triggerFetch(fromDate, toDate)
   }
@@ -141,27 +141,27 @@ export default function AdminReportPage() {
 
   const kpiCards = kpi
     ? [
-        {
-          icon: "💰", label: "Doanh thu", value: fmt(kpi.totalRevenue),
-          compare: `Kỳ trước: ${fmt(kpi.prevTotalRevenue)}`,
-          ...pctLabel(kpi.revenuePct)
-        },
-        {
-          icon: "📦", label: "Tổng số đơn", value: kpi.totalOrders.toLocaleString("vi-VN"),
-          compare: `Kỳ trước: ${kpi.prevTotalOrders.toLocaleString("vi-VN")} đơn`,
-          ...pctLabel(kpi.ordersPct)
-        },
-        {
-          icon: "🧾", label: "Giá trị TB / đơn", value: fmt(kpi.avgOrderValue),
-          compare: `Kỳ trước: ${fmt(kpi.prevAvgOrderValue)}`,
-          ...pctLabel(kpi.avgPct)
-        },
-        {
-          icon: "👥", label: "Lượt khách phục vụ", value: kpi.totalCustomers.toLocaleString("vi-VN"),
-          compare: `Kỳ trước: ${kpi.prevTotalCustomers.toLocaleString("vi-VN")} lượt`,
-          ...pctLabel(kpi.customersPct)
-        },
-      ]
+      {
+        icon: "💰", label: "Doanh thu", value: fmt(kpi.totalRevenue),
+        compare: `Kỳ trước: ${fmt(kpi.prevTotalRevenue)}`,
+        ...pctLabel(kpi.revenuePct)
+      },
+      {
+        icon: "📦", label: "Tổng số đơn", value: kpi.totalOrders.toLocaleString("vi-VN"),
+        compare: `Kỳ trước: ${kpi.prevTotalOrders.toLocaleString("vi-VN")} đơn`,
+        ...pctLabel(kpi.ordersPct)
+      },
+      {
+        icon: "🧾", label: "Giá trị TB / đơn", value: fmt(kpi.avgOrderValue),
+        compare: `Kỳ trước: ${fmt(kpi.prevAvgOrderValue)}`,
+        ...pctLabel(kpi.avgPct)
+      },
+      {
+        icon: "👥", label: "Lượt khách phục vụ", value: kpi.totalCustomers.toLocaleString("vi-VN"),
+        compare: `Kỳ trước: ${kpi.prevTotalCustomers.toLocaleString("vi-VN")} lượt`,
+        ...pctLabel(kpi.customersPct)
+      },
+    ]
     : []
 
   return (
@@ -192,25 +192,22 @@ export default function AdminReportPage() {
             {periods.map(p => (
               <button
                 key={p} onClick={() => handlePeriodClick(p)}
-                className={`px-3.5 py-1.5 border-[1.5px] rounded-lg text-xs font-semibold cursor-pointer transition-all ${
-                  activePeriod === p
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-500 border-gray-200 hover:border-blue-400"
-                }`}
+                className={`px-3.5 py-1.5 border-[1.5px] rounded-lg text-xs font-semibold cursor-pointer transition-all ${activePeriod === p
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-500 border-gray-200 hover:border-blue-400"
+                  }`}
               >{p}</button>
             ))}
           </div>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-4 mb-6 text-red-700 text-sm">{error}</div>
         )}
 
-        {/* Loading skeleton */}
         {loading && (
           <div className="grid grid-cols-4 gap-4 mb-6">
-            {[1,2,3,4].map(i => (
+            {[1, 2, 3, 4].map(i => (
               <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 animate-pulse">
                 <div className="h-4 bg-gray-200 rounded mb-3 w-1/2" />
                 <div className="h-7 bg-gray-200 rounded mb-2 w-3/4" />
@@ -222,7 +219,6 @@ export default function AdminReportPage() {
 
         {!loading && stats && (
           <>
-            {/* KPI Cards */}
             <div className="grid grid-cols-4 gap-4 mb-6">
               {kpiCards.map(c => (
                 <div key={c.label} className="bg-white border border-gray-200 rounded-xl p-5">
@@ -239,9 +235,7 @@ export default function AdminReportPage() {
               ))}
             </div>
 
-            {/* Charts Row */}
             <div className="grid gap-4 mb-4" style={{ gridTemplateColumns: "2fr 1fr" }}>
-              {/* Bar Chart */}
               <div className="bg-white border border-gray-200 rounded-xl p-6">
                 <div className="flex items-start justify-between mb-5">
                   <div>
@@ -291,7 +285,6 @@ export default function AdminReportPage() {
                 )}
               </div>
 
-              {/* Donut Chart */}
               <div className="bg-white border border-gray-200 rounded-xl p-6">
                 <div className="text-[15px] font-bold mb-5">Cơ cấu theo danh mục</div>
                 {stats.revenueByCategory.length === 0 ? (
@@ -313,7 +306,6 @@ export default function AdminReportPage() {
               </div>
             </div>
 
-            {/* Top Dishes */}
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
                 <div className="text-[15px] font-bold">🍜 Top 5 món ăn bán chạy</div>
@@ -357,9 +349,7 @@ export default function AdminReportPage() {
               )}
             </div>
 
-            {/* Bottom Row */}
             <div className="grid grid-cols-2 gap-4">
-              {/* Revenue by Shift */}
               <div className="bg-white border border-gray-200 rounded-xl p-6">
                 <div className="text-[15px] font-bold mb-4">Doanh thu theo ca làm việc</div>
                 {[
@@ -390,7 +380,6 @@ export default function AdminReportPage() {
                 </div>
               </div>
 
-              {/* Monthly Comparison */}
               <div className="bg-white border border-gray-200 rounded-xl p-6">
                 <div className="text-[15px] font-bold mb-4">So sánh 3 tháng gần nhất</div>
                 <table className="w-full border-collapse">
@@ -423,12 +412,9 @@ export default function AdminReportPage() {
   )
 }
 
-// ─── Donut SVG ────────────────────────────────────────────────────────────────
-
 function DonutChart({ segments }: { segments: CategoryRevenue[] }) {
   const r = 50, cx = 60, cy = 60, circumference = 2 * Math.PI * r
 
-  // Pre-compute offsets outside JSX to avoid mutating variables during render
   const items = segments.map((seg, i) => {
     const prevDash = segments
       .slice(0, i)

@@ -4,11 +4,11 @@ import { api } from "../lib/api";
 import { useAuthStore } from "../state/auth";
 
 const NAV_ITEMS = [
-    { icon: "📊", label: "Dashboard", href: "/admin/dashboard", section: "Tổng quan" },
+    { icon: "📊", label: "Dashboard", href: "/admin", section: "Tổng quan" },
     { icon: "🍽️", label: "Quản lý món ăn", href: "/admin/menu", section: "Quản lý" },
     { icon: "🪑", label: "Quản lý bàn", href: "/admin/tables", section: null },
     { icon: "👨‍💼", label: "Quản lý nhân viên", href: "/admin/staff", section: null },
-    { icon: "📅", label: "Quản lý đặt bàn", href: "/admin/reservations", section: null, active: true },
+    { icon: "📅", label: "Quản lý đặt bàn", href: "/reservations", section: null, active: true },
     { icon: "📈", label: "Báo cáo doanh thu", href: "/admin/report", section: "Báo cáo" },
 ];
 

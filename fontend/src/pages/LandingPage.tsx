@@ -336,7 +336,7 @@ export default function LandingPage() {
                                 </select>
                             </div>
                             <div className="flex items-end">
-                                <Link to="/reservation" state={{ name: user?.name, date, time, people }} className="px-7 py-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-white font-bold text-base border-none cursor-pointer transition-colors whitespace-nowrap no-underline">
+                                <Link to="/customer/reservation" state={{ name: user?.name, date, time, people }} className="px-7 py-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-white font-bold text-base border-none cursor-pointer transition-colors whitespace-nowrap no-underline">
                                     Đặt bàn →
                                 </Link>
                             </div>

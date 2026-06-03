@@ -440,7 +440,7 @@ export default function AdminDashboardPage() {
                       </span>
                     )}
                   </div>
-                  <a href="/admin/reservations" className="text-[13px] text-blue-600 font-medium hover:underline">Xem tất cả →</a>
+                  <a href="/reservations" className="text-[13px] text-blue-600 font-medium hover:underline">Xem tất cả →</a>
                 </div>
                 <table className="w-full border-collapse">
                   <thead>
